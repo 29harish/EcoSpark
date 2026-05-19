@@ -1,9 +1,11 @@
+require('dotenv').config()
+
+
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
-require('dotenv').config()
 
-console.log('MONGO_URI:', process.env.MONGO_URI) 
+
 
 const app = express()
 const PORT = process.env.PORT || 8000
