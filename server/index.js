@@ -4,24 +4,28 @@ const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
 
-
-
 const app = express()
-const PORT = process.env.PORT || 8000
 
 app.use(cors())
 app.use(express.json())
 
-// Connect to MongoDB
+require('./models/User')
+require('./models/Mission')
+require('./models/Badge')
+require('./models/Garden')
+require('./models/Ecoin')
+
+const authRoutes = require('./routes/authRoutes')
+app.use('/api/auth', authRoutes)
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected! 🍃'))
-  .catch((err) => console.log('MongoDB error:', err))
+  .catch(err => console.log('MongoDB error:', err))
 
-// Test route
 app.get('/', (req, res) => {
   res.json({ message: 'EcoSpark backend is running! 🌱' })
 })
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+app.listen(8000, () => {
+  console.log('Server running on port 8000')
 })
