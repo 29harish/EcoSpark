@@ -10,13 +10,15 @@ import Quiz from './pages/student/Quiz'
 import Garden from './pages/student/Garden'
 import Leaderboard from './pages/student/Leaderboard'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import Landing from './pages/Landing'
 
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
+
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
