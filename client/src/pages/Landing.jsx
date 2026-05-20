@@ -15,7 +15,7 @@ const Landing = () => {
     { icon: '📖', step: '1. Learn', desc: 'Explore fun lessons on environmental topics.' },
     { icon: '📝', step: '2. Quiz', desc: 'Test your knowledge with interactive quizzes.' },
     { icon: '🌿', step: '3. Act', desc: 'Complete eco-missions in your daily life.' },
-    { icon: '🪙', step: '4. Earn Rewards', desc: 'Earn EcoCoins, XP and amazing badges.' },
+    { icon: '🏆🪙', step: '4. Earn Rewards', desc: 'Earn EcoCoins, XP and amazing badges.' },
     { icon: '🌳', step: '5. Grow & Inspire', desc: 'Grow your garden and inspire others!' },
   ]
 

@@ -9,6 +9,7 @@ import Missions from './pages/student/Missions'
 import Quiz from './pages/student/Quiz'
 import Garden from './pages/student/Garden'
 import Leaderboard from './pages/student/Leaderboard'
+import Profile from './pages/student/Profile'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import Landing from './pages/Landing'
 
@@ -36,6 +37,9 @@ const App = () => {
           } />
           <Route path="/leaderboard" element={
             <ProtectedRoute><Leaderboard /></ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute><Profile /></ProtectedRoute>
           } />
           <Route path="/teacher" element={
             <ProtectedRoute><TeacherDashboard /></ProtectedRoute>
