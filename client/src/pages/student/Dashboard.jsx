@@ -71,33 +71,6 @@ const Dashboard = () => {
     { icon: '🏆', label: 'Challenges', bg: '#FAEEDA' },
   ]
 
-  const achievements = [
-    { icon: '🌱', title: 'Eco Starter', desc: 'Complete 5 lessons', earned: true },
-    { icon: '♻️', title: 'Recycler Pro', desc: 'Recycle 50 items', earned: true },
-    { icon: '🌍', title: 'Planet Guardian', desc: 'Reach Level 5', earned: false },
-    { icon: '⚡', title: 'Eco Champion', desc: 'Win 10 challenges', earned: false },
-  ]
-
-  const recentActivity = [
-    { action: 'Completed lesson', item: 'Ocean Conservation', time: '2 hours ago', icon: '📚' },
-    { action: 'Earned badge', item: 'Eco Starter', time: '5 hours ago', icon: '🏅' },
-    { action: 'Planted tree', item: '1 virtual tree', time: '1 day ago', icon: '🌳' },
-    { action: 'Won challenge', item: 'Plastic Challenge', time: '2 days ago', icon: '🎯' },
-  ]
-
-  const weeklyGoals = [
-    { goal: 'Complete 3 lessons', current: 2, target: 3, icon: '📚' },
-    { goal: 'Score 80%+ on quizzes', current: 75, target: 80, icon: '✏️' },
-    { goal: 'Complete missions', current: 5, target: 7, icon: '🎯' },
-  ]
-
-  const environmentalImpact = [
-    { label: 'CO₂ Saved', value: '2.4 kg', unit: 'this month', icon: '💨' },
-    { label: 'Waste Reduced', value: '15 kg', unit: 'this month', icon: '♻️' },
-    { label: 'Water Saved', value: '500 L', unit: 'this month', icon: '💧' },
-    { label: 'Impact Score', value: '85', unit: '/100', icon: '⭐' },
-  ]
-
   return (
     <div style={styles.page}>
 
@@ -209,20 +182,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Environmental Impact */}
-        <div style={styles.impactGrid}>
-          {environmentalImpact.map((impact, i) => (
-            <div key={i} style={styles.impactCard}>
-              <div style={styles.impactHeader}>
-                <span style={{ fontSize: '28px' }}>{impact.icon}</span>
-                <p style={styles.impactLabel}>{impact.label}</p>
-              </div>
-              <p style={styles.impactValue}>{impact.value}</p>
-              <p style={styles.impactUnit}>{impact.unit}</p>
-            </div>
-          ))}
-        </div>
-
         {/* Middle Row */}
         <div style={styles.midRow}>
 
@@ -248,30 +207,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Weekly Goals */}
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <h3 style={styles.cardTitle}>This Week's Goals</h3>
-                <span style={styles.viewAll} onClick={() => navigate('/missions')}>Adjust</span>
-              </div>
-              <div style={styles.goalsContainer}>
-                {weeklyGoals.map((goal, i) => (
-                  <div key={i} style={styles.goalItem}>
-                    <div style={styles.goalLeft}>
-                      <span style={{ fontSize: '20px' }}>{goal.icon}</span>
-                      <p style={styles.goalText}>{goal.goal}</p>
-                    </div>
-                    <div style={styles.goalRight}>
-                      <div style={styles.goalBarBg}>
-                        <div style={{ ...styles.goalBarFill, width: `${(goal.current / goal.target) * 100}%` }} />
-                      </div>
-                      <p style={styles.goalProgress}>{goal.current}/{goal.target}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Today's Missions */}
             <div style={styles.card}>
               <div style={styles.cardHeader}>
@@ -292,45 +227,6 @@ const Dashboard = () => {
                       <div style={{ ...styles.missionBtn, background: m.done ? '#1D9E75' : '#EF9F27' }}>
                         {m.done ? '✓' : '→'}
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Achievements */}
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <h3 style={styles.cardTitle}>Your Achievements</h3>
-                <span style={styles.viewAll}>View all (12)</span>
-              </div>
-              <div style={styles.achievementsGrid}>
-                {achievements.map((achievement, i) => (
-                  <div key={i} style={{ ...styles.achievementItem, opacity: achievement.earned ? 1 : 0.5 }}>
-                    <div style={{ ...styles.achievementBadge, background: achievement.earned ? '#FFF4E6' : '#F0F0F0' }}>
-                      <span style={{ fontSize: '28px' }}>{achievement.icon}</span>
-                    </div>
-                    <p style={styles.achievementTitle}>{achievement.title}</p>
-                    <p style={styles.achievementDesc}>{achievement.desc}</p>
-                    {achievement.earned && <div style={styles.earnedBadge}>✓ Earned</div>}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <h3 style={styles.cardTitle}>Recent Activity</h3>
-                <span style={styles.viewAll}>View all</span>
-              </div>
-              <div style={styles.activityTimeline}>
-                {recentActivity.map((activity, i) => (
-                  <div key={i} style={styles.activityItem}>
-                    <div style={styles.activityIcon}>{activity.icon}</div>
-                    <div style={styles.activityContent}>
-                      <p style={styles.activityText}><strong>{activity.action}</strong> - {activity.item}</p>
-                      <p style={styles.activityTime}>{activity.time}</p>
                     </div>
                   </div>
                 ))}
@@ -377,20 +273,6 @@ const Dashboard = () => {
                   <span style={styles.gardenPts}>0 / 200</span>
                 </div>
                 <p style={styles.gardenHint}>Water your garden to grow more!</p>
-                <div style={styles.gardenStats}>
-                  <div style={styles.gardenStat}>
-                    <p style={styles.gardenStatLabel}>Plants</p>
-                    <p style={styles.gardenStatValue}>3</p>
-                  </div>
-                  <div style={styles.gardenStat}>
-                    <p style={styles.gardenStatLabel}>Visits</p>
-                    <p style={styles.gardenStatValue}>12</p>
-                  </div>
-                  <div style={styles.gardenStat}>
-                    <p style={styles.gardenStatLabel}>Next Reward</p>
-                    <p style={styles.gardenStatValue}>50 XP</p>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -407,10 +289,6 @@ const Dashboard = () => {
                 </p>
               </div>
               <button style={styles.aiBtn}>Ask me!</button>
-              <div style={styles.aiStats}>
-                <p style={styles.aiStat}>📚 15 facts learned</p>
-                <p style={styles.aiStat}>💬 Chat Streak: 5 days</p>
-              </div>
             </div>
 
             {/* Earth Day Challenge */}
@@ -418,36 +296,9 @@ const Dashboard = () => {
               <div style={styles.challengeInfo}>
                 <h3 style={styles.challengeTitle}>Earth Day Challenge 🌍</h3>
                 <p style={styles.challengeDesc}>Complete missions and win exclusive badges!</p>
-                <div style={styles.challengeProgress}>
-                  <p style={styles.progressLabel}>Progress: 5/10</p>
-                  <div style={styles.challengeBar}>
-                    <div style={{ ...styles.challengeBarFill, width: '50%' }} />
-                  </div>
-                </div>
                 <button style={styles.challengeBtn}>Join Now</button>
               </div>
               <span style={{ fontSize: '60px' }}>👦</span>
-            </div>
-
-            {/* Leaderboard Preview */}
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <h3 style={styles.cardTitle}>Leaderboard Preview</h3>
-                <span style={styles.viewAll} onClick={() => navigate('/leaderboard')}>See all</span>
-              </div>
-              <div style={styles.leaderboardPreview}>
-                {[
-                  { rank: '🥇', name: 'Alex Chen', points: '2,450 pts' },
-                  { rank: '🥈', name: 'You', points: '1,850 pts' },
-                  { rank: '🥉', name: 'Jordan Kim', points: '1,720 pts' },
-                ].map((entry, i) => (
-                  <div key={i} style={styles.leaderboardEntry}>
-                    <span style={{ fontSize: '20px' }}>{entry.rank}</span>
-                    <p style={styles.leaderboardName}>{entry.name}</p>
-                    <p style={styles.leaderboardPoints}>{entry.points}</p>
-                  </div>
-                ))}
-              </div>
             </div>
 
           </div>
@@ -488,7 +339,7 @@ const styles = {
   avatarCircle: { width: '38px', height: '38px', borderRadius: '50%', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '600', color: '#27500A', cursor: 'pointer' },
 
   // Stats
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '12px' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' },
   statCard: { background: '#fff', borderRadius: '14px', border: '1px solid #e0ede8', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' },
   statLeft: { display: 'flex', alignItems: 'center', gap: '12px', flex: 1 },
   statLabel: { fontSize: '12px', color: '#888780', margin: '0 0 2px' },
@@ -499,16 +350,8 @@ const styles = {
   xpBarFill: { background: '#378ADD', borderRadius: '99px', height: '6px' },
   xpText: { fontSize: '11px', color: '#888780', margin: 0, textAlign: 'right' },
 
-  // Impact Grid
-  impactGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' },
-  impactCard: { background: '#fff', borderRadius: '14px', border: '1px solid #e0ede8', padding: '14px', textAlign: 'center' },
-  impactHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginBottom: '8px' },
-  impactLabel: { fontSize: '12px', color: '#888780', margin: 0, fontWeight: '500' },
-  impactValue: { fontSize: '22px', fontWeight: '700', color: '#2C2C2A', margin: 0 },
-  impactUnit: { fontSize: '11px', color: '#888780', margin: 0 },
-
   // Mid Row
-  midRow: { display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px' },
+  midRow: { display: 'grid', gridTemplateColumns: '1fr 320px', gap: '16px' },
   leftCol: { display: 'flex', flexDirection: 'column', gap: '16px' },
   rightCol: { display: 'flex', flexDirection: 'column', gap: '16px' },
 
@@ -530,16 +373,6 @@ const styles = {
   cardTitle: { fontSize: '15px', fontWeight: '600', color: '#2C2C2A', margin: 0 },
   viewAll: { fontSize: '13px', color: '#1D9E75', cursor: 'pointer', fontWeight: '500' },
 
-  // Goals
-  goalsContainer: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  goalItem: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: '#f9fbfa', borderRadius: '10px' },
-  goalLeft: { display: 'flex', alignItems: 'center', gap: '10px', flex: 1 },
-  goalText: { fontSize: '13px', color: '#2C2C2A', margin: 0, fontWeight: '500' },
-  goalRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' },
-  goalBarBg: { width: '80px', height: '4px', background: '#e0ede8', borderRadius: '99px' },
-  goalBarFill: { height: '4px', background: '#1D9E75', borderRadius: '99px' },
-  goalProgress: { fontSize: '11px', color: '#888780', margin: 0 },
-
   // Missions
   missionsRow: { display: 'flex', gap: '12px' },
   missionCard: { flex: 1, borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '6px' },
@@ -548,22 +381,6 @@ const styles = {
   missionFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' },
   missionProgress: { fontSize: '12px', color: '#888780', margin: 0 },
   missionBtn: { width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px', fontWeight: '700' },
-
-  // Achievements
-  achievementsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' },
-  achievementItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center' },
-  achievementBadge: { width: '56px', height: '56px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  achievementTitle: { fontSize: '11px', fontWeight: '600', color: '#2C2C2A', margin: 0 },
-  achievementDesc: { fontSize: '10px', color: '#888780', margin: 0 },
-  earnedBadge: { fontSize: '9px', color: '#1D9E75', fontWeight: '600' },
-
-  // Activity Timeline
-  activityTimeline: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  activityItem: { display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '10px', background: '#f9fbfa', borderRadius: '10px' },
-  activityIcon: { fontSize: '18px', flexShrink: 0 },
-  activityContent: { flex: 1, minWidth: 0 },
-  activityText: { fontSize: '12px', color: '#2C2C2A', margin: 0 },
-  activityTime: { fontSize: '11px', color: '#888780', margin: '2px 0 0' },
 
   // Explore
   exploreRow: { display: 'flex', gap: '16px', marginTop: '12px' },
@@ -581,37 +398,21 @@ const styles = {
   gardenBarBg: { flex: 1, background: '#C0DD97', borderRadius: '99px', height: '6px' },
   gardenBarFill: { background: '#1D9E75', borderRadius: '99px', height: '6px' },
   gardenPts: { fontSize: '12px', color: '#3B6D11', fontWeight: '500' },
-  gardenHint: { fontSize: '12px', color: '#3B6D11', margin: '0 0 10px' },
-  gardenStats: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' },
-  gardenStat: { padding: '8px', background: '#FFFFFF', borderRadius: '8px', textAlign: 'center' },
-  gardenStatLabel: { fontSize: '10px', color: '#888780', margin: 0 },
-  gardenStatValue: { fontSize: '14px', fontWeight: '700', color: '#1D9E75', margin: 0 },
+  gardenHint: { fontSize: '12px', color: '#3B6D11', margin: 0 },
 
   // AI Card
   aiCard: { background: '#F0EDFF', borderRadius: '16px', border: '1px solid #CEC8F5', padding: '16px' },
   aiHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' },
   aiChat: { background: '#fff', borderRadius: '10px', padding: '12px', marginBottom: '12px' },
   aiMsg: { fontSize: '13px', color: '#2C2C2A', margin: 0, lineHeight: 1.6 },
-  aiBtn: { background: '#1D9E75', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', width: '100%', marginBottom: '10px' },
-  aiStats: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  aiStat: { fontSize: '11px', color: '#888780', margin: 0 },
+  aiBtn: { background: '#1D9E75', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', width: '100%' },
 
   // Challenge
   challengeCard: { background: '#1D5C3A', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   challengeInfo: { flex: 1 },
   challengeTitle: { fontSize: '15px', fontWeight: '700', color: '#fff', margin: '0 0 6px' },
-  challengeDesc: { fontSize: '12px', color: '#9FE1CB', margin: '0 0 10px', lineHeight: 1.5 },
-  challengeProgress: { marginBottom: '10px' },
-  progressLabel: { fontSize: '11px', color: '#9FE1CB', margin: '0 0 4px' },
-  challengeBar: { background: 'rgba(255,255,255,0.2)', height: '4px', borderRadius: '99px' },
-  challengeBarFill: { background: '#1D9E75', height: '4px', borderRadius: '99px' },
+  challengeDesc: { fontSize: '12px', color: '#9FE1CB', margin: '0 0 12px', lineHeight: 1.5 },
   challengeBtn: { background: '#fff', color: '#1D5C3A', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
-
-  // Leaderboard
-  leaderboardPreview: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  leaderboardEntry: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: '#f9fbfa', borderRadius: '10px' },
-  leaderboardName: { flex: 1, fontSize: '13px', fontWeight: '600', color: '#2C2C2A', margin: 0 },
-  leaderboardPoints: { fontSize: '12px', color: '#1D9E75', fontWeight: '700', margin: 0 },
 }
 
 export default Dashboard
