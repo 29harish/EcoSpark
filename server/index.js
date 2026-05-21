@@ -26,11 +26,13 @@ const authRoutes = require('./routes/authRoutes')
 const quizRoutes = require('./routes/quizRoutes')
 const leaderboardRoutes = require('./routes/leaderboardRoutes')
 const missionRoutes = require('./routes/missionRoutes')
+const gardenRoutes = require('./routes/gardenRoutes')
 
 app.use('/api/auth', authRoutes)
 app.use('/api/quiz', quizRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/missions', missionRoutes)
+app.use('/api/garden', gardenRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'EcoSpark backend is running! 🌱' })
