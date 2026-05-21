@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { createUserInDB } from '../../services/authService'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -24,17 +25,23 @@ const Login = () => {
     setLoading(false)
   }
 
-  const handleGoogleLogin = async () => {
-    setError('')
-    setLoading(true)
-    try {
-      await googleLogin()
-      navigate('/dashboard')
-    } catch (err) {
-      setError('Google login failed. Please try again.')
-    }
-    setLoading(false)
+const handleGoogleLogin = async () => {
+  setError('')
+  setLoading(true)
+  try {
+    const result = await googleLogin()
+    await createUserInDB(
+      result.user.uid,
+      result.user.displayName,
+      result.user.email,
+      'student'
+    )
+    navigate('/dashboard')
+  } catch (err) {
+    setError('Google login failed. Please try again.')
   }
+  setLoading(false)
+}
 
   return (
     <div style={styles.page}>
