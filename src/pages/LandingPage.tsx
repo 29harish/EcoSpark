@@ -20,6 +20,11 @@ import {
   Globe,
   Recycle,
   Droplets,
+  BookOpen,
+  ClipboardCheck,
+  Footprints,
+  Award,
+  TreePine,
   Bird,
   Wind,
   Sun,
@@ -147,25 +152,28 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
   </div>
 </nav>
 
-      {/* ===== HERO ===== */}
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <FloatingLeaves count={12} />
-        {/* Background gradient */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-leaf-50/60 via-cream-50 to-lagoon-50/40" />
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-leaf-200/30 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute top-40 right-1/4 w-80 h-80 bg-sun-200/20 rounded-full blur-3xl animate-float" />
+{/* ===== HERO ===== */}
+<section className="relative isolate pt-32 pb-2 px-4 sm:px-6 lg:px-8 overflow-hidden min-h-[640px] flex items-center">
+  {/* Background illustration */}
+  <div className="absolute inset-0 z-0">
+    <img
+      src="/hero-background.png"
+      alt=""
+      className="w-full h-full \"
+    />
+    <div className="absolute inset-0 bg-gradient-to-r from-cream-50 via-cream-100/10 to-cream-0/0" />
+    <div className="absolute inset-0 bg-gradient-to-t from-cream-50/90 via-transparent to-transparent" />
+  </div>
 
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left: Text */}
-          <div className="animate-slide-up text-center lg:text-left">
+        <div className="max-w-7xl mx-auto w-full relative z-10">
+          <div className="max-w-xl animate-slide-up text-center lg:text-left mx-auto lg:mx-0">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] text-leaf-800">
               Learn.
               <br />
-               Act.
+              Act.
               <br />
               Grow.
               <br />
-              <span className="gradient-text">Make an Impact.</span>
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-leaf-600/80 max-w-xl mx-auto lg:mx-0 leading-relaxed">
@@ -183,121 +191,55 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
               </Button>
             </div>
 
-            <div className="mt-8 flex items-center gap-6 justify-center lg:justify-start text-sm text-leaf-600/70">
-              <div className="flex items-center gap-1.5"><Heart className="w-4 h-4 text-coral-400" /> 100% Free</div>
-              <div className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-sun-400" /> No downloads</div>
-              <div className="flex items-center gap-1.5"><Users className="w-4 h-4 text-lagoon-400" /> For students</div>
-            </div>
+  
           </div>
 
-          {/* Right: Product preview */}
-          <div className="relative animate-pop-in">
-            <div className="relative">
-              {/* Main preview card */}
-              <div className="bg-white rounded-4xl shadow-soft-lg p-6 border border-leaf-100/50 transform lg:rotate-2 hover:rotate-0 transition-transform duration-500">
-                {/* Mini dashboard preview */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-2xl bg-leaf-100 flex items-center justify-center text-xl">🐼</div>
-                    <div>
-                      <div className="text-sm font-bold text-leaf-800">Welcome back!</div>
-                      <div className="text-xs text-leaf-600/60">Level 10 · Earth Guardian</div>
-                    </div>
-                  </div>
-                  <Badge variant="coral" icon={<Flame className="w-3 h-3" />}>12 day streak</Badge>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="bg-leaf-50 rounded-2xl p-3 text-center">
-                    <div className="text-2xl font-extrabold text-leaf-600">2,450</div>
-                    <div className="text-xs text-leaf-600/60 font-medium">Total XP</div>
-                  </div>
-                  <div className="bg-sun-50 rounded-2xl p-3 text-center">
-                    <div className="text-2xl font-extrabold text-sun-600">340</div>
-                    <div className="text-xs text-sun-600/60 font-medium">Eco Coins</div>
-                  </div>
-                  <div className="bg-lagoon-50 rounded-2xl p-3 text-center">
-                    <div className="text-2xl font-extrabold text-lagoon-600">#3</div>
-                    <div className="text-xs text-lagoon-600/60 font-medium">School Rank</div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-leaf-50 to-lagoon-50 rounded-2xl p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-leaf-700">Today's Mission</span>
-                    <Badge variant="green">+30 XP</Badge>
-                  </div>
-                  <div className="text-sm text-leaf-600/70 mb-3">Use a reusable water bottle</div>
-                  <ProgressBar value={75} gradient="from-leaf-400 to-lagoon-400" />
-                </div>
-
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="flex-1 bg-gradient-to-r from-leaf-400 to-lagoon-400 rounded-xl p-2.5 text-center text-white text-sm font-bold">
-                    🌱 Garden Lv 3
-                  </div>
-                  <div className="flex-1 bg-gradient-to-r from-sun-400 to-coral-400 rounded-xl p-2.5 text-center text-white text-sm font-bold">
-                    🏆 6 Badges
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating accent cards */}
-              <div className="absolute -top-6 -right-4 bg-white rounded-2xl shadow-soft-lg p-3 border border-leaf-100/50 animate-bounce-soft hidden sm:block">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-sun-100 flex items-center justify-center text-lg">🪙</div>
-                  <div>
-                    <div className="text-xs font-bold text-leaf-800">+15 Coins!</div>
-                    <div className="text-xs text-leaf-600/60">Mission complete</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-soft-lg p-3 border border-leaf-100/50 animate-float hidden sm:block">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-leaf-100 flex items-center justify-center text-lg">🌳</div>
-                  <div>
-                    <div className="text-xs font-bold text-leaf-800">Garden grew!</div>
-                    <div className="text-xs text-leaf-600/60">New tree unlocked</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS ===== */}
-      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8">
+           {/* ===== HOW IT WORKS ===== */}
+      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-leaf-50/40 to-cream-50">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <Badge variant="teal" size="md" icon={<Sparkles className="w-4 h-4" />}>How it Works</Badge>
-            <h2 className="mt-4 text-3xl md:text-5xl font-extrabold text-leaf-800">
-              Learn <span className="gradient-text">→</span> Act <span className="gradient-text">→</span> Earn <span className="gradient-text">→</span> Grow <span className="gradient-text">→</span> Compete
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-leaf-900 flex items-center justify-center gap-3">
+              How It Works🍃
+             
             </h2>
-            <p className="mt-4 text-lg text-leaf-600/70 max-w-2xl mx-auto">
-              Five simple steps that turn learning into real-world impact
+            <p className="mt-3 text-lg ">
+              Simple steps, big impact!
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+           <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-10 lg:gap-2">
             {[
-              { icon: <GraduationCap className="w-7 h-7" />, emoji: '', title: 'Learn', desc: 'Bite-sized interactive lessons on sustainability', color: 'from-leaf-400 to-lagoon-400' },
-              { icon: <Target className="w-7 h-7" />, emoji: '', title: 'Act', desc: 'Complete real-world eco missions every day', color: 'from-lagoon-400 to-sky2-400' },
-              { icon: <Coins className="w-7 h-7" />, emoji: '', title: 'Earn', desc: 'Gain XP and Eco Coins for every action', color: 'from-sun-400 to-coral-400' },
-              { icon: <Sprout className="w-7 h-7" />, emoji: '', title: 'Grow', desc: 'Watch your virtual Eco Garden flourish', color: 'from-leaf-500 to-sun-400' },
-              { icon: <Trophy className="w-7 h-7" />, emoji: '', title: 'Compete', desc: 'Climb the leaderboard with friends', color: 'from-coral-400 to-lavender-400' },
+              { image: 'learn.png', title: 'Learn', desc: 'Explore fun lessons on environmental topics.' },
+              { image: 'quiz.png', title: 'Quiz', desc: 'Test your knowledge with interactive quizzes.' },
+              { image: 'act.png', title: 'Act', desc: 'Complete eco-missions in your daily life.' },
+              { image: 'rewards.png', title: 'Earn Rewards', desc: 'Earn EcoCoins, XP and amazing badges.' },
+              { image: 'grow.png', title: 'Grow & Inspire', desc: 'Grow your garden and inspire others!' },
             ].map((step, i) => (
-              <Card key={i} className="p-6 text-center relative animate-slide-up" hover>
-                <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white mx-auto mb-4 shadow-soft`}>
-                  {step.icon}
+              <div key={i} className="flex items-center lg:items-start">
+                <div className="group cursor-pointer flex flex-col items-center text-center animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                  <div className="relative">
+                    <div className="w-24 h-24 rounded-full bg-leaf-50 border border-leaf-100 overflow-hidden transition-all duration-300 ease-out group-hover:border-leaf-400 group-hover:shadow-glow group-hover:-translate-y-1">
+                      <img
+                        src={step.image}
+                        alt={step.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                    </div>
+                    <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-leaf-600 text-white text-xs font-extrabold flex items-center justify-center border-2 border-white shadow-soft transition-transform duration-300 group-hover:scale-110">
+                      {i + 1}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-lg font-extrabold text-leaf-900 transition-colors duration-300 group-hover:text-leaf-600">{i + 1}. {step.title}</h3>
+                  <p className="mt-1 text-sm text-leaf-600/70 leading-relaxed max-w-[170px]">{step.desc}</p>
                 </div>
-                <div className="text-3xl mb-2">{step.emoji}</div>
-                <h3 className="text-lg font-extrabold text-leaf-800 mb-1">{step.title}</h3>
-                <p className="text-sm text-leaf-600/70 leading-relaxed">{step.desc}</p>
+
                 {i < 4 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-3 text-leaf-300 text-2xl">→</div>
+                  <ArrowRight className="hidden lg:block w-6 h-6 text-leaf-300 mx-2 mt-11 flex-shrink-0" />
                 )}
-              </Card>
+              </div>
             ))}
           </div>
         </div>
