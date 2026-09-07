@@ -5,6 +5,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { FloatingLeaves } from '@/components/decorations/FloatingLeaves';
 import { categories } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
+import { useEffect, useState } from 'react';
 import {
   Leaf,
   ArrowRight,
@@ -44,6 +45,65 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ onEnterApp }: LandingPageProps) {
+  const [activeSection, setActiveSection] = useState('home');
+
+  useEffect(() => {
+    const sections = [
+      'home',
+      'how-it-works',
+      'why-ecospark',
+      'garden',
+      'schools',
+      'ai-eco-guide',
+    ];
+
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 140;
+
+      // At the very top, Home is active.
+      if (window.scrollY < 80) {
+        setActiveSection('home');
+        return;
+      }
+
+      for (let i = sections.length - 1; i >= 1; i--) {
+        const section = document.getElementById(sections[i]);
+
+        if (section && section.offsetTop <= scrollPosition) {
+          setActiveSection(sections[i]);
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navItems = [
+    { label: 'Home', id: 'home', href: '#' },
+    { label: 'How it Works', id: 'how-it-works', href: '#how-it-works' },
+    { label: 'Features', id: 'why-ecospark', href: '#why-ecospark' },
+    
+    { label: 'For Schools', id: 'schools', href: '#schools' },
+  ];
+
+  const handleNavClick = (id: string) => {
+    setActiveSection(id);
+
+    // Smoothly scroll to real sections.
+    if (id !== 'home') {
+      const section = document.getElementById(id);
+
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
   const { navigate } = useApp();
 
   const handleStart = () => {
@@ -57,7 +117,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 overflow-x-hidden">
+    <div id="home" className="min-h-screen bg-cream-50 overflow-x-hidden">
       {/* ===== NAV BAR ===== */}
 {/* ===== HEADER ===== */}
 <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-white via-sky-50 to-sky-100 border-b border-white/60">
@@ -80,52 +140,26 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
     </div>
 
     {/* ===== NAVIGATION ===== */}
+    
     <div className="hidden lg:flex items-center gap-7 xl:gap-9">
-
-      <a
-        href="#"
-        className="relative text-sm font-semibold text-leaf-600 py-6
-        after:absolute after:left-0 after:right-0 after:bottom-3
-        after:h-[2px] after:bg-leaf-500"
-      >
-        Home
-      </a>
-
-      <a
-        href="#why-ecospark"
-        className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
-      >
-        Features
-      </a>
-
-      <a
-        href="#how-it-works"
-        className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
-      >
-        How it Works
-      </a>
-
-      <a
-        href="#schools"
-        className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
-      >
-        For Schools
-      </a>
-
-      <a
-        href="# "
-        className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
-      >
-        About Us
-      </a>
-
-      <a
-        href="#"
-        className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
-      >
-        Contact
-      </a>
-
+      {navItems.map((item) => (
+        <a
+          key={item.id}
+          href={item.href}
+          onClick={(e) => {
+            e.preventDefault();
+            handleNavClick(item.id);
+          }}
+          className={`relative py-6 text-sm font-semibold transition-colors duration-200
+            ${
+              activeSection === item.id
+                ? 'text-leaf-600 after:absolute after:left-0 after:right-0 after:bottom-3 after:h-[2px] after:bg-leaf-500'
+                : 'text-gray-700 hover:text-leaf-500'
+            }`}
+        >
+          {item.label}
+        </a>
+      ))}
     </div>
 
     {/* ===== ACTION BUTTONS ===== */}
