@@ -92,7 +92,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
       </a>
 
       <a
-        href="#categories"
+        href="#why-ecospark"
         className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
       >
         Features
@@ -106,14 +106,14 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
       </a>
 
       <a
-        href="#"
+        href="#schools"
         className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
       >
         For Schools
       </a>
 
       <a
-        href="#"
+        href="# "
         className="text-sm font-semibold text-gray-700 hover:text-leaf-500 transition-colors"
       >
         About Us
@@ -315,11 +315,11 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
       </section>
 
 {/* ===== WHY ECOSPARK ===== */}
-<section id="why-ecospark" className="py-24 px-4 sm:px-6 lg:px-8 bg-cream-50">
+<section id="why-ecospark" className="py-16 md:py-20 px-4 sm:px-6 lg:px-8 bg-cream-50">
   <div className="max-w-7xl mx-auto">
 
     {/* Heading */}
-    <div className="text-center max-w-3xl mx-auto mb-16">
+    <div className="text-center max-w-3xl mx-auto mb-12">
       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-leaf-50 border border-leaf-100 text-leaf-700 text-sm font-bold mb-5">
         <Sparkles className="w-4 h-4" />
         Why EcoSpark?
@@ -467,7 +467,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
           
 
       {/* ===== ECO GARDEN PREVIEW ===== */}
-      <section id="garden" className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="garden" className="py-16 md:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="animate-slide-up">
@@ -507,8 +507,10 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
 
 {/* ===== FOR SCHOOLS ===== */}
-<section id="schools" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-leaf-50/40 to-cream-50">
-  <div className="max-w-7xl mx-auto">
+<section
+  id="schools"
+  className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-leaf-50/40 to-cream-50"
+>  <div className="max-w-7xl mx-auto">
 
     <div className="grid lg:grid-cols-2 gap-14 items-center">
 
@@ -708,7 +710,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 {/* ===== AI ECO GUIDE ===== */}
 <section
   id="ai-eco-guide"
-  className="py-24 px-4 sm:px-6 lg:px-8 bg-cream-50 overflow-hidden"
+  className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-cream-50 overflow-hidden"
 >
   <div className="max-w-7xl mx-auto">
 
