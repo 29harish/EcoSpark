@@ -82,11 +82,14 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Nav now matches every section the scroll-spy tracks, so "Eco Garden"
+  // and "AI Guide" are reachable instead of only found by scrolling past them.
   const navItems = [
     { label: 'Home', id: 'home', href: '#' },
     { label: 'How it Works', id: 'how-it-works', href: '#how-it-works' },
     { label: 'Features', id: 'why-ecospark', href: '#why-ecospark' },
-    
+    { label: 'Eco Garden', id: 'garden', href: '#garden' },
+    { label: 'AI Guide', id: 'ai-eco-guide', href: '#ai-eco-guide' },
     { label: 'For Schools', id: 'schools', href: '#schools' },
   ];
 
@@ -141,7 +144,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
     {/* ===== NAVIGATION ===== */}
     
-    <div className="hidden lg:flex items-center gap-7 xl:gap-9">
+    <div className="hidden lg:flex items-center gap-6 xl:gap-8">
       {navItems.map((item) => (
         <a
           key={item.id}
@@ -191,8 +194,9 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
       {/* ===== HERO ===== */}
       <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-leaf-50/60 via-cream-50 to-lagoon-50/40" />
+        {/* Only one ambient glow now — the second (sun) blob was dropped so the
+            "blurred circle behind everything" pattern doesn't repeat across sections. */}
         <div className="absolute top-20 left-1/4 w-72 h-72 bg-leaf-200/30 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute top-40 right-1/4 w-80 h-80 bg-sun-200/20 rounded-full blur-3xl animate-float" />
 
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Text */}
@@ -271,7 +275,9 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
                 </div>
               </div>
 
-              {/* Floating accent cards */}
+              {/* Floating accent cards — kept here only. They used to repeat in the
+                  AI Eco Guide section too; trimming that repeat keeps the motif
+                  feeling like a hero highlight instead of a page-wide template. */}
               <div className="absolute -top-6 -right-4 bg-white rounded-2xl shadow-soft-lg p-3 border border-leaf-100/50 animate-bounce-soft hidden sm:block">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-sun-100 flex items-center justify-center text-sun-600">
@@ -315,11 +321,11 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-10 lg:gap-2">
             {[
-              { image: 'learn.png', title: 'Learn', desc: 'Explore fun lessons on environmental topics.' },
-              { image: 'quiz.png', title: 'Quiz', desc: 'Test your knowledge with interactive quizzes.' },
-              { image: 'act.png', title: 'Act', desc: 'Complete eco-missions in your daily life.' },
-              { image: 'rewards.png', title: 'Earn Rewards', desc: 'Earn EcoCoins, XP and amazing badges.' },
-              { image: 'grow.png', title: 'Grow & Inspire', desc: 'Grow your garden and inspire others!' },
+              { image: '/learn.png', title: 'Learn', desc: 'Explore fun lessons on environmental topics.' },
+              { image: '/quiz.png', title: 'Quiz', desc: 'Test your knowledge with interactive quizzes.' },
+              { image: '/act.png', title: 'Act', desc: 'Complete eco-missions in your daily life.' },
+              { image: '/rewards.png', title: 'Earn Rewards', desc: 'Earn EcoCoins, XP and amazing badges.' },
+              { image: '/grow.png', title: 'Grow & Inspire', desc: 'Grow your garden and inspire others!' },
             ].map((step, i) => (
               <div key={i} className="flex items-center lg:items-start">
                 <div className="group cursor-pointer flex flex-col items-center text-center animate-slide-up" style={{ animationDelay: `${i * 0.1}s` }}>
@@ -371,22 +377,23 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
       </p>
     </div>
 
-    {/* Feature Cards */}
+    {/* Feature Cards — dropped the "-right-8 -top-8" hover-scale decorative
+        circle that was repeated identically in all 4 cards. It's the same
+        blob motif as the hero/AI-guide glows; removing it here keeps that
+        pattern from showing up a fourth and fifth time. */}
 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
 
   {/* Learn */}
   <Card
-    className="p-7 group relative overflow-hidden text-center"
+    className="p-7 group text-center"
     hover
   >
-    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-leaf-100/50 group-hover:scale-150 transition-transform duration-500" />
-
-    <div className="relative flex flex-col items-center">
+    <div className="flex flex-col items-center">
       
       {/* Custom Image Icon */}
       <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
         <img
-          src="learn-icon.png"
+          src="/learn-icon.png"
           alt="Learn Differently"
           className="w-full h-full object-contain"
         />
@@ -406,17 +413,15 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
   {/* Act */}
   <Card
-    className="p-7 group relative overflow-hidden text-center"
+    className="p-7 group text-center"
     hover
   >
-    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-lagoon-100/50 group-hover:scale-150 transition-transform duration-500" />
-
-    <div className="relative flex flex-col items-center">
+    <div className="flex flex-col items-center">
 
       {/* Custom Image Icon */}
       <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
         <img
-          src="act-icon.png"
+          src="/act-icon.png"
           alt="Learn by Doing"
           className="w-full h-full object-contain"
         />
@@ -436,17 +441,15 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
   {/* Impact */}
   <Card
-    className="p-7 group relative overflow-hidden text-center"
+    className="p-7 group text-center"
     hover
   >
-    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-sun-100/50 group-hover:scale-150 transition-transform duration-500" />
-
-    <div className="relative flex flex-col items-center">
+    <div className="flex flex-col items-center">
 
       {/* Custom Image Icon */}
       <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
         <img
-          src="impact-icon.png"
+          src="/impact-icon.png"
           alt="See Your Impact"
           className="w-full h-full object-contain"
         />
@@ -466,17 +469,15 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
   {/* Community */}
   <Card
-    className="p-7 group relative overflow-hidden text-center"
+    className="p-7 group text-center"
     hover
   >
-    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-coral-100/50 group-hover:scale-150 transition-transform duration-500" />
-
-    <div className="relative flex flex-col items-center">
+    <div className="flex flex-col items-center">
 
       {/* Custom Image Icon */}
       <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
         <img
-          src="community-icon.png"
+          src="/community-icon.png"
           alt="Learn Together"
           className="w-full h-full object-contain"
         />
@@ -511,10 +512,6 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
               <p className="mt-4 text-lg text-leaf-600/70 leading-relaxed">
                 Every lesson you complete and every mission you accomplish makes your virtual garden flourish. Watch trees grow, flowers bloom, and animals arrive as you learn.
               </p>
-
-              <div className="mt-8 space-y-4">
-                
-              </div>
 
               <div className="mt-8">
                 <Button size="lg" onClick={handleStart} icon={<Sprout className="w-5 h-5" />}>
@@ -670,11 +667,14 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
           For Schools & Colleges
         </div>
 
+        {/* Heading emphasis varied here: underline accent instead of the
+            gradient-text span used in the other three sections. */}
         <h2 className="text-3xl md:text-5xl font-extrabold text-leaf-900 leading-tight">
           Bring environmental
           <br />
-          <span className="gradient-text">
+          <span className="relative inline-block">
             learning to your campus.
+            <span className="absolute left-0 -bottom-1 w-full h-[6px] bg-leaf-200/70 -z-10 rounded-full" />
           </span>
         </h2>
 
@@ -684,7 +684,9 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
           participation and progress.
         </p>
 
-        {/* Benefits */}
+        {/* Benefits — icon treatment swapped from filled circle to an
+            outlined square so this section doesn't read as an identical
+            reskin of the AI Eco Guide feature list below. */}
         <div className="mt-8 space-y-4">
 
           {[
@@ -716,7 +718,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
                 key={item.title}
                 className="flex items-start gap-4"
               >
-                <div className="w-11 h-11 rounded-xl bg-leaf-50 text-leaf-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-11 h-11 rounded-xl border-2 border-leaf-200 text-leaf-600 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-5 h-5" />
                 </div>
 
@@ -789,12 +791,9 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
               </div>
 
-
-              {/* Title */}
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-leaf-50 text-leaf-600 text-xs font-bold mb-4">
-                <Sparkles className="w-3.5 h-3.5" />
-                AI-Powered
-              </span>
+              {/* "AI-Powered" sparkles badge removed — "Meet Your Eco Guide"
+                  badge on the right column already uses the same icon+pill
+                  pattern, so this was a third repeat within one section. */}
 
               <h3 className="text-2xl md:text-3xl font-extrabold text-leaf-900">
                 AI Eco Guide
@@ -808,43 +807,9 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
             </div>
           </div>
 
-
-          {/* Floating badge — top */}
-          <div className="absolute -top-5 -right-5 hidden sm:flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-leaf-100 shadow-xl">
-
-            <div className="w-8 h-8 rounded-lg bg-leaf-50 flex items-center justify-center">
-              <Leaf className="w-4 h-4 text-leaf-600" />
-            </div>
-
-            <div>
-              <p className="text-[10px] font-extrabold text-leaf-900">
-                Personalized
-              </p>
-              <p className="text-[9px] text-leaf-600/50">
-                Just for you
-              </p>
-            </div>
-
-          </div>
-
-
-          {/* Floating badge — bottom */}
-          <div className="absolute -bottom-5 -left-5 hidden sm:flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-leaf-100 shadow-xl">
-
-            <div className="w-8 h-8 rounded-lg bg-lagoon-50 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-lagoon-600" />
-            </div>
-
-            <div>
-              <p className="text-[10px] font-extrabold text-leaf-900">
-                Always learning
-              </p>
-              <p className="text-[9px] text-leaf-600/50">
-                Growing with you
-              </p>
-            </div>
-
-          </div>
+          {/* Floating badges removed here — this exact "small white pill
+              popping outside the card corner" motif already appears twice
+              in the hero, so it isn't repeated a third and fourth time. */}
 
         </div>
       </div>
@@ -860,11 +825,12 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
         </div>
 
 
-        {/* Heading */}
+        {/* Heading — bold solid color instead of gradient-text, for the
+            same variation reason as the Schools section. */}
         <h2 className="text-3xl md:text-5xl font-extrabold text-leaf-900 leading-tight">
           A little guidance
           <br />
-          <span className="gradient-text">
+          <span className="text-lagoon-600">
             can go a long way.
           </span>
         </h2>
@@ -1056,6 +1022,9 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
             Explore
           </h3>
 
+          {/* Missions / Quizzes / Challenges used to point to a
+              "#gamification" id that doesn't exist on the page — routed
+              to the real sections that actually cover them instead. */}
           <div className="space-y-2.5">
             <a
               href="#how-it-works"
@@ -1065,21 +1034,21 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
             </a>
 
             <a
-              href="#gamification"
+              href="#how-it-works"
               className="block text-sm text-white/65 hover:text-white transition"
             >
               Missions
             </a>
 
             <a
-              href="#gamification"
+              href="#how-it-works"
               className="block text-sm text-white/65 hover:text-white transition"
             >
               Quizzes
             </a>
 
             <a
-              href="#gamification"
+              href="#why-ecospark"
               className="block text-sm text-white/65 hover:text-white transition"
             >
               Challenges
@@ -1116,7 +1085,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
             </a>
 
             <a
-              href="#"
+              href="#schools"
               className="block text-sm text-white/65 hover:text-white transition"
             >
               For Schools
