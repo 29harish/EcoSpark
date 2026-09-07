@@ -15,6 +15,7 @@ import {
   X,
   Flame,
   Coins,
+  LogOut,
 } from 'lucide-react';
 import { useApp, type PageId } from '@/context/AppContext';
 
@@ -38,7 +39,7 @@ const navItems: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const { currentPage, navigate, level, xp, coins, streak } = useApp();
+  const { currentPage, navigate, level, xp, coins, streak, logout } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleNavigate = (page: PageId) => {
@@ -149,15 +150,17 @@ export function Sidebar() {
               );
             })}
           </nav>
+          
+            {/* Logout */}
+            <button
+              onClick={logout}
+              className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-200"
+            >
+              <LogOut className="w-5 h-5" />
+              Logout
+            </button>
 
-          {/* Footer */}
-          <div className="p-4">
-            <div className="bg-gradient-to-br from-sun-400 to-coral-400 rounded-2xl p-4 text-white text-center shadow-soft">
-              <div className="text-2xl mb-1">🌍</div>
-              <div className="text-sm font-bold">Keep growing!</div>
-              <div className="text-xs text-white/80 mt-0.5">Complete missions to level up</div>
-            </div>
-          </div>
+
         </div>
       </aside>
     </>

@@ -109,10 +109,13 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
   };
   const { navigate } = useApp();
 
-  const handleStart = () => {
-    onEnterApp();
-    navigate('dashboard');
-  };
+const handleStart = () => {
+  navigate('signup');
+};
+
+const handleLogin = () => {
+  navigate('login');
+};
 
   const handleExplore = () => {
     onEnterApp();
@@ -169,7 +172,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
     <div className="flex items-center gap-3 shrink-0">
 
       <button
-        onClick={() => onEnterApp()}
+        onClick={handleLogin}
         className="px-6 py-2.5 rounded-full bg-white
         border border-gray-200 text-sm font-bold text-gray-700
         shadow-sm hover:shadow-md hover:border-leaf-200

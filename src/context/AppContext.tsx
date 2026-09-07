@@ -1,4 +1,14 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from 'react';
+
+import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   lessons as initialLessons,
   missions as initialMissions,
@@ -15,11 +25,19 @@ export type PageId =
   | 'garden'
   | 'leaderboard'
   | 'challenges'
+  | 'landing'
   | 'ai-guide'
   | 'rewards'
-  | 'profile';
+  | 'profile'
+  | 'login'
+  | 'signup';
 
 interface AppState {
+  // Authentication
+  user: User | null;
+  authLoading: boolean;
+  logout: () => Promise<void>;
+
   // Navigation
   currentPage: PageId;
   activeLessonId: string | null;
@@ -86,7 +104,9 @@ function loadPersistedState(): Partial<PersistedState> | null {
 const persisted = loadPersistedState();
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
+  const [currentPage, setCurrentPage] = useState<PageId>('landing');
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
   const [xp, setXp] = useState(persisted?.xp ?? 2450);
@@ -173,6 +193,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // XP-driven `level` value into gardenLevel so the two systems never
   // disagree — previously this was capped at 3 while gardenRank could
   // reach 12 ("Earth Guardian"), leaving high-XP users visually stuck.
+  
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    setUser(firebaseUser);
+    setAuthLoading(false);
+
+    setCurrentPage((currentPage) => {
+      // Firebase restored a logged-in user after refresh
+      if (firebaseUser && currentPage === 'landing') {
+        return 'dashboard';
+      }
+
+      // User is logged out while trying to access the app
+      if (
+        !firebaseUser &&
+        currentPage !== 'landing' &&
+        currentPage !== 'login' &&
+        currentPage !== 'signup'
+      ) {
+        return 'landing';
+      }
+
+      return currentPage;
+    });
+  });
+
+  return unsubscribe;
+}, []);
+
   useEffect(() => {
     if (level !== gardenLevel) {
       setGardenLevel(level);
@@ -189,9 +238,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [xp, coins, gardenLevel, lessons, missions]);
 
+  const logout = useCallback(async () => {
+  try {
+    await signOut(auth);
+    setUser(null);
+    navigate('landing');
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+}, [navigate]);
+
   return (
     <AppContext.Provider
       value={{
+        user,
+        authLoading,
+        logout,
         currentPage,
         activeLessonId,
         navigate,
