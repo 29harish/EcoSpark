@@ -14,6 +14,8 @@ import {
   Sprout,
   Trophy,
   Flame,
+  Lightbulb,
+  Thermometer,
   Coins,
   Zap,
   Heart,
@@ -152,21 +154,15 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
   </div>
 </nav>
 
-{/* ===== HERO ===== */}
-<section className="relative isolate pt-32 pb-2 px-4 sm:px-6 lg:px-8 overflow-hidden min-h-[640px] flex items-center">
-  {/* Background illustration */}
-  <div className="absolute inset-0 z-0">
-    <img
-      src="/hero-background.png"
-      alt=""
-      className="w-full h-full \"
-    />
-    <div className="absolute inset-0 bg-gradient-to-r from-cream-50 via-cream-100/10 to-cream-0/0" />
-    <div className="absolute inset-0 bg-gradient-to-t from-cream-50/90 via-transparent to-transparent" />
-  </div>
+      {/* ===== HERO ===== */}
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-leaf-50/60 via-cream-50 to-lagoon-50/40" />
+        <div className="absolute top-20 left-1/4 w-72 h-72 bg-leaf-200/30 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute top-40 right-1/4 w-80 h-80 bg-sun-200/20 rounded-full blur-3xl animate-float" />
 
-        <div className="max-w-7xl mx-auto w-full relative z-10">
-          <div className="max-w-xl animate-slide-up text-center lg:text-left mx-auto lg:mx-0">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Text */}
+          <div className="animate-slide-up text-center lg:text-left">
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.05] text-leaf-800">
               Learn.
               <br />
@@ -177,9 +173,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-leaf-600/80 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              EcoSpark makes environmental education fun with interactive lessons,
-              real-world eco missions, rewards, and a virtual garden that grows
-              with your progress.
+                EcoSpark turns environmental education into an interactive journey where students learn, complete real-world eco missions, earn rewards, and see their impact grow. 
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -190,10 +184,85 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
                 Explore EcoSpark
               </Button>
             </div>
-
-  
           </div>
 
+          {/* Right: Dashboard preview */}
+          <div className="relative animate-pop-in">
+            <div className="relative">
+              <div className="bg-white rounded-4xl shadow-soft-lg p-6 border border-leaf-100/50 transform lg:rotate-2 hover:rotate-0 transition-transform duration-500">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-2xl bg-leaf-100 flex items-center justify-center text-leaf-600">
+                      <Sprout className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-leaf-800">Welcome back!</div>
+                      <div className="text-xs text-leaf-600/60">Level 10 · Earth Guardian</div>
+                    </div>
+                  </div>
+                  <Badge variant="coral" icon={<Flame className="w-3 h-3" />}>12 day streak</Badge>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-leaf-50 rounded-2xl p-3 text-center">
+                    <div className="text-2xl font-extrabold text-leaf-600">2,450</div>
+                    <div className="text-xs text-leaf-600/60 font-medium">Total XP</div>
+                  </div>
+                  <div className="bg-sun-50 rounded-2xl p-3 text-center">
+                    <div className="text-2xl font-extrabold text-sun-600">340</div>
+                    <div className="text-xs text-sun-600/60 font-medium">Eco Coins</div>
+                  </div>
+                  <div className="bg-lagoon-50 rounded-2xl p-3 text-center">
+                    <div className="text-2xl font-extrabold text-lagoon-600">#3</div>
+                    <div className="text-xs text-lagoon-600/60 font-medium">School Rank</div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-leaf-50 to-lagoon-50 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-leaf-700">Today's Mission</span>
+                    <Badge variant="green">+30 XP</Badge>
+                  </div>
+                  <div className="text-sm text-leaf-600/70 mb-3">Use a reusable water bottle</div>
+                  <ProgressBar value={75} gradient="from-leaf-400 to-lagoon-400" />
+                </div>
+
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="flex-1 bg-gradient-to-r from-leaf-400 to-lagoon-400 rounded-xl p-2.5 text-center text-white text-sm font-bold flex items-center justify-center gap-1.5">
+                    <Sprout className="w-4 h-4" /> Garden Lv 3
+                  </div>
+                  <div className="flex-1 bg-gradient-to-r from-sun-400 to-coral-400 rounded-xl p-2.5 text-center text-white text-sm font-bold flex items-center justify-center gap-1.5">
+                    <Trophy className="w-4 h-4" /> 6 Badges
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating accent cards */}
+              <div className="absolute -top-6 -right-4 bg-white rounded-2xl shadow-soft-lg p-3 border border-leaf-100/50 animate-bounce-soft hidden sm:block">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-sun-100 flex items-center justify-center text-sun-600">
+                    <Coins className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-leaf-800">+15 Coins!</div>
+                    <div className="text-xs text-leaf-600/60">Mission complete</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-soft-lg p-3 border border-leaf-100/50 animate-float hidden sm:block">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-leaf-100 flex items-center justify-center text-leaf-600">
+                    <TreePine className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-leaf-800">Garden grew!</div>
+                    <div className="text-xs text-leaf-600/60">New tree unlocked</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -245,57 +314,164 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
         </div>
       </section>
 
-      {/* ===== CATEGORIES ===== */}
-      <section id="categories" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-cream-50 to-leaf-50/30">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <Badge variant="green" size="md" icon={<Globe className="w-4 h-4" />}>Learning Categories</Badge>
-            <h2 className="mt-4 text-3xl md:text-5xl font-extrabold text-leaf-800">
-              Explore <span className="gradient-text">6 sustainability topics</span>
-            </h2>
-            <p className="mt-4 text-lg text-leaf-600/70 max-w-2xl mx-auto">
-              From climate change to renewable energy — learn what matters for our planet
-            </p>
-          </div>
+{/* ===== WHY ECOSPARK ===== */}
+<section id="why-ecospark" className="py-24 px-4 sm:px-6 lg:px-8 bg-cream-50">
+  <div className="max-w-7xl mx-auto">
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((cat, i) => (
-              <GradientCard
-                key={cat.id}
-                gradient={cat.gradient}
-                className="p-6 animate-slide-up relative overflow-hidden group"
-                hover
-                onClick={() => { onEnterApp(); navigate('learn'); }}
-              >
-                <div className="absolute -top-4 -right-4 text-8xl opacity-20 group-hover:opacity-30 transition-opacity duration-300">
-                  {cat.emoji}
-                </div>
-                <div className="relative z-10">
-                  <div className="text-5xl mb-4">{cat.emoji}</div>
-                  <h3 className="text-xl font-extrabold mb-2">{cat.name}</h3>
-                  <p className="text-sm text-white/80 leading-relaxed mb-4">{cat.description}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold">
-                      {cat.lessonsCount} lessons
-                    </span>
-                    <span className="bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1">
-                      <Star className="w-3 h-3" /> Beginner-friendly
-                    </span>
-                  </div>
-                </div>
-              </GradientCard>
-            ))}
-          </div>
-        </div>
-      </section>
+    {/* Heading */}
+    <div className="text-center max-w-3xl mx-auto mb-16">
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-leaf-50 border border-leaf-100 text-leaf-700 text-sm font-bold mb-5">
+        <Sparkles className="w-4 h-4" />
+        Why EcoSpark?
+      </div>
+
+      <h2 className="text-3xl md:text-5xl font-extrabold text-leaf-900">
+        Learning about the planet
+        <br />
+        <span className="gradient-text">should be an experience.</span>
+      </h2>
+
+      <p className="mt-5 text-lg text-leaf-600/70 leading-relaxed">
+        EcoSpark goes beyond traditional environmental education by
+        combining learning, real-world action, rewards and community.
+      </p>
+    </div>
+
+    {/* Feature Cards */}
+<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+  {/* Learn */}
+  <Card
+    className="p-7 group relative overflow-hidden text-center"
+    hover
+  >
+    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-leaf-100/50 group-hover:scale-150 transition-transform duration-500" />
+
+    <div className="relative flex flex-col items-center">
+      
+      {/* Custom Image Icon */}
+      <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
+        <img
+          src="learn-icon.png"
+          alt="Learn Differently"
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      <h3 className="text-xl font-extrabold text-leaf-900 mb-3">
+        Learn Differently
+      </h3>
+
+      <p className="text-sm text-leaf-600/70 leading-relaxed">
+        Bite-sized interactive lessons make complex environmental
+        concepts simple, visual and engaging.
+      </p>
+    </div>
+  </Card>
+
+
+  {/* Act */}
+  <Card
+    className="p-7 group relative overflow-hidden text-center"
+    hover
+  >
+    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-lagoon-100/50 group-hover:scale-150 transition-transform duration-500" />
+
+    <div className="relative flex flex-col items-center">
+
+      {/* Custom Image Icon */}
+      <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
+        <img
+          src="act-icon.png"
+          alt="Learn by Doing"
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      <h3 className="text-xl font-extrabold text-leaf-900 mb-3">
+        Learn by Doing
+      </h3>
+
+      <p className="text-sm text-leaf-600/70 leading-relaxed">
+        Turn knowledge into meaningful real-world eco missions
+        that students can complete every day.
+      </p>
+    </div>
+  </Card>
+
+
+  {/* Impact */}
+  <Card
+    className="p-7 group relative overflow-hidden text-center"
+    hover
+  >
+    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-sun-100/50 group-hover:scale-150 transition-transform duration-500" />
+
+    <div className="relative flex flex-col items-center">
+
+      {/* Custom Image Icon */}
+      <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
+        <img
+          src="impact-icon.png"
+          alt="See Your Impact"
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      <h3 className="text-xl font-extrabold text-leaf-900 mb-3">
+        See Your Impact
+      </h3>
+
+      <p className="text-sm text-leaf-600/70 leading-relaxed">
+        Track your progress and discover how small actions can
+        contribute to a healthier planet.
+      </p>
+    </div>
+  </Card>
+
+
+  {/* Community */}
+  <Card
+    className="p-7 group relative overflow-hidden text-center"
+    hover
+  >
+    <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-coral-100/50 group-hover:scale-150 transition-transform duration-500" />
+
+    <div className="relative flex flex-col items-center">
+
+      {/* Custom Image Icon */}
+      <div className="w-24 h-24 mb-6 group-hover:scale-110 transition-transform duration-300">
+        <img
+          src="community-icon.png"
+          alt="Learn Together"
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      <h3 className="text-xl font-extrabold text-leaf-900 mb-3">
+        Learn Together
+      </h3>
+
+      <p className="text-sm text-leaf-600/70 leading-relaxed">
+        Compete with friends and classmates through challenges,
+        leaderboards and shared environmental goals.
+      </p>
+    </div>
+  </Card>
+
+
+    </div>
+  </div>
+</section>
+
+          
 
       {/* ===== ECO GARDEN PREVIEW ===== */}
       <section id="garden" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="animate-slide-up">
-              <Badge variant="green" size="md" icon={<Sprout className="w-4 h-4" />}>Signature Feature</Badge>
-              <h2 className="mt-4 text-3xl md:text-5xl font-extrabold text-leaf-800">
+                            <h2 className="mt-4 text-3xl md:text-5xl font-extrabold text-leaf-800">
                 Grow your own <span className="gradient-text">Eco Garden</span>
               </h2>
               <p className="mt-4 text-lg text-leaf-600/70 leading-relaxed">
@@ -308,7 +484,7 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
 
               <div className="mt-8">
                 <Button size="lg" onClick={handleStart} icon={<Sprout className="w-5 h-5" />}>
-                  Start Growing Your Garden
+                  Start Growing
                 </Button>
               </div>
             </div>
@@ -329,67 +505,448 @@ export function LandingPage({ onEnterApp }: LandingPageProps) {
         </div>
       </section>
 
-      {/* ===== GAMIFICATION ===== */}
-      <section id="gamification" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-leaf-50/30 to-cream-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-14">
-            <Badge variant="gold" size="md" icon={<Trophy className="w-4 h-4" />}>Gamification</Badge>
-            <h2 className="mt-4 text-3xl md:text-5xl font-extrabold text-leaf-800">
-              Learning that feels like <span className="gradient-text-warm">play</span>
-            </h2>
-            <p className="mt-4 text-lg text-leaf-600/70 max-w-2xl mx-auto">
-              XP, streaks, badges, coins, and leaderboards keep students motivated and coming back
-            </p>
-          </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: <Zap className="w-8 h-8" />, emoji: '⚡', title: 'XP & Levels', desc: 'Earn experience points from lessons and missions to level up', color: 'from-sun-400 to-coral-400' },
-              { icon: <Flame className="w-8 h-8" />, emoji: '🔥', title: 'Daily Streaks', desc: 'Keep your streak alive by completing actions every day', color: 'from-coral-400 to-sun-500' },
-              { icon: <Trophy className="w-8 h-8" />, emoji: '🏆', title: 'Leaderboards', desc: 'Compete with friends, school, and globally', color: 'from-sun-400 to-leaf-400' },
-              { icon: <Coins className="w-8 h-8" />, emoji: '🪙', title: 'Eco Coins', desc: 'Spend coins on rewards and garden decorations', color: 'from-sun-400 to-sun-500' },
-            ].map((item, i) => (
-              <Card key={i} className="p-6 animate-slide-up" hover>
-                <div className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-4 shadow-soft`}>
-                  {item.icon}
-                </div>
-                <h3 className="text-lg font-extrabold text-leaf-800 mb-1">{item.title}</h3>
-                <p className="text-sm text-leaf-600/70 leading-relaxed">{item.desc}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+{/* ===== FOR SCHOOLS ===== */}
+<section id="schools" className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-leaf-50/40 to-cream-50">
+  <div className="max-w-7xl mx-auto">
 
-      {/* ===== FINAL CTA ===== */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto">
-          <GradientCard gradient="from-leaf-500 via-lagoon-500 to-leaf-600" className="p-12 md:p-16 text-center relative overflow-hidden">
-            <FloatingLeaves count={6} />
-            <div className="relative z-10">
-              <div className="text-6xl mb-6 animate-bounce-soft">🌍</div>
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
-                Ready to spark change?
-              </h2>
-              <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8">
-                Join thousands of students learning to protect our planet. Your eco journey starts with one lesson.
+    <div className="grid lg:grid-cols-2 gap-14 items-center">
+
+      {/* Left - Dashboard Preview */}
+      <div className="relative animate-pop-in order-2 lg:order-1">
+
+        {/* Glow */}
+        <div className="absolute inset-0 bg-leaf-300/20 blur-3xl rounded-full scale-90" />
+
+        <div className="relative bg-white rounded-3xl border border-leaf-100 shadow-soft-lg p-5">
+
+          {/* Fake Dashboard Header */}
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="text-xs text-leaf-500 font-semibold">
+                TEACHER DASHBOARD
               </p>
-              <Button
-                size="lg"
-                variant="accent"
-                onClick={handleStart}
-                icon={<Sparkles className="w-5 h-5" />}
-                className="!text-lg !px-10 !py-5"
-              >
-                Start Your Eco Journey
-              </Button>
-              <div className="mt-6 flex items-center justify-center gap-6 text-white/80 text-sm">
-                <div className="flex items-center gap-1.5"><Heart className="w-4 h-4" /> Free forever</div>
-                <div className="flex items-center gap-1.5"><Zap className="w-4 h-4" /> No sign-up required</div>
-                <div className="flex items-center gap-1.5"><Users className="w-4 h-4" /> 50,000+ students</div>
-              </div>
+              <h3 className="text-lg font-extrabold text-leaf-900">
+                Class Overview
+              </h3>
             </div>
-          </GradientCard>
+
+            <div className="w-10 h-10 rounded-xl bg-leaf-50 flex items-center justify-center">
+              <GraduationCap className="w-5 h-5 text-leaf-600" />
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+
+            <div className="rounded-2xl bg-leaf-50 p-4">
+              <Users className="w-4 h-4 text-leaf-600 mb-2" />
+              <p className="text-xl font-extrabold text-leaf-900">
+                42
+              </p>
+              <p className="text-[11px] text-leaf-600/60">
+                Students
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-sky-50 p-4">
+              <Target className="w-4 h-4 text-sky-600 mb-2" />
+              <p className="text-xl font-extrabold text-leaf-900">
+                18
+              </p>
+              <p className="text-[11px] text-leaf-600/60">
+                Missions
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-amber-50 p-4">
+              <TrendingUp className="w-4 h-4 text-amber-600 mb-2" />
+              <p className="text-xl font-extrabold text-leaf-900">
+                86%
+              </p>
+              <p className="text-[11px] text-leaf-600/60">
+                Engagement
+              </p>
+            </div>
+
+          </div>
+
+          {/* Student Progress */}
+          <div className="border border-leaf-100 rounded-2xl p-5">
+
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-bold text-leaf-900 text-sm">
+                Class Progress
+              </p>
+
+              <span className="text-xs font-bold text-leaf-600">
+                This Month
+              </span>
+            </div>
+
+            {[
+              { name: 'Climate Change', progress: 84 },
+              { name: 'Recycling', progress: 72 },
+              { name: 'Water Conservation', progress: 91 },
+            ].map((item) => (
+              <div key={item.name} className="mb-4 last:mb-0">
+
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="font-semibold text-leaf-700">
+                    {item.name}
+                  </span>
+
+                  <span className="font-bold text-leaf-600">
+                    {item.progress}%
+                  </span>
+                </div>
+
+                <ProgressBar value={item.progress} />
+              </div>
+            ))}
+
+          </div>
+
+          {/* Bottom */}
+          <div className="mt-4 flex items-center gap-3 bg-leaf-50 rounded-2xl p-4">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
+              <Globe className="w-5 h-5 text-leaf-600" />
+            </div>
+
+            <div>
+              <p className="text-xs text-leaf-600/60">
+                Class Environmental Impact
+              </p>
+              <p className="font-extrabold text-leaf-900">
+                128 eco actions completed
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Right - Content */}
+      <div className="order-1 lg:order-2">
+
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-leaf-100 text-leaf-700 text-sm font-bold mb-5 shadow-sm">
+          <GraduationCap className="w-4 h-4" />
+          For Schools & Colleges
+        </div>
+
+        <h2 className="text-3xl md:text-5xl font-extrabold text-leaf-900 leading-tight">
+          Bring environmental
+          <br />
+          <span className="gradient-text">
+            learning to your campus.
+          </span>
+        </h2>
+
+        <p className="mt-5 text-lg text-leaf-600/70 leading-relaxed">
+          EcoSpark gives educators the tools to turn sustainability
+          education into engaging activities while tracking student
+          participation and progress.
+        </p>
+
+        {/* Benefits */}
+        <div className="mt-8 space-y-4">
+
+          {[
+            {
+              icon: ClipboardCheck,
+              title: 'Create & Assign Missions',
+              desc: 'Give students meaningful environmental challenges.'
+            },
+            {
+              icon: TrendingUp,
+              title: 'Track Student Progress',
+              desc: 'Monitor learning, participation and engagement.'
+            },
+            {
+              icon: Award,
+              title: 'Verify & Reward',
+              desc: 'Review completed actions and reward participation.'
+            },
+            {
+              icon: Globe,
+              title: 'Measure Impact',
+              desc: 'See the collective environmental contribution of your students.'
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div
+                key={item.title}
+                className="flex items-start gap-4"
+              >
+                <div className="w-11 h-11 rounded-xl bg-leaf-50 text-leaf-600 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-5 h-5" />
+                </div>
+
+                <div>
+                  <h3 className="font-extrabold text-leaf-900">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-sm text-leaf-600/65 mt-0.5">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{/* ===== AI ECO GUIDE ===== */}
+<section
+  id="ai-eco-guide"
+  className="py-24 px-4 sm:px-6 lg:px-8 bg-cream-50 overflow-hidden"
+>
+  <div className="max-w-7xl mx-auto">
+
+    <div className="grid lg:grid-cols-2 gap-14 lg:gap-20 items-center">
+
+      {/* ===== LEFT: AI VISUAL ===== */}
+      <div className="relative order-2 lg:order-1">
+
+        {/* Background glow */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-72 h-72 bg-leaf-200/40 rounded-full blur-3xl" />
+        </div>
+
+        {/* Main AI Card */}
+        <div className="relative max-w-lg mx-auto">
+
+          <div className="relative rounded-[2rem] bg-white border border-leaf-100 shadow-2xl p-8 md:p-10 overflow-hidden">
+
+            {/* Decorative circles */}
+            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-leaf-50" />
+            <div className="absolute -bottom-20 -left-16 w-44 h-44 rounded-full bg-lagoon-50" />
+
+            <div className="relative flex flex-col items-center text-center">
+
+              {/* AI Icon / Image */}
+              <div className="relative mb-7">
+
+                <div className="absolute inset-0 bg-leaf-200/40 rounded-full blur-xl scale-125" />
+
+         <div className="relative w-64 h-64 mx-auto rounded-full bg-leaf-50 border-8 border-white shadow-xl overflow-hidden flex items-center justify-center">
+  <img
+    src="/ai-eco-guide.png"
+    alt="AI Eco Guide"
+    className="w-full h-full object-cover"
+  />
+</div>
+
+                {/* Online indicator */}
+                <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center">
+                  <div className="w-3 h-3 rounded-full bg-leaf-500" />
+                </div>
+
+              </div>
+
+
+              {/* Title */}
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-leaf-50 text-leaf-600 text-xs font-bold mb-4">
+                <Sparkles className="w-3.5 h-3.5" />
+                AI-Powered
+              </span>
+
+              <h3 className="text-2xl md:text-3xl font-extrabold text-leaf-900">
+                AI Eco Guide
+              </h3>
+
+              <p className="mt-3 text-sm md:text-base text-leaf-600/60 leading-relaxed max-w-sm">
+                Your personal guide to understanding the planet,
+                discovering better choices, and taking meaningful action.
+              </p>
+
+            </div>
+          </div>
+
+
+          {/* Floating badge — top */}
+          <div className="absolute -top-5 -right-5 hidden sm:flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-leaf-100 shadow-xl">
+
+            <div className="w-8 h-8 rounded-lg bg-leaf-50 flex items-center justify-center">
+              <Leaf className="w-4 h-4 text-leaf-600" />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-extrabold text-leaf-900">
+                Personalized
+              </p>
+              <p className="text-[9px] text-leaf-600/50">
+                Just for you
+              </p>
+            </div>
+
+          </div>
+
+
+          {/* Floating badge — bottom */}
+          <div className="absolute -bottom-5 -left-5 hidden sm:flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-leaf-100 shadow-xl">
+
+            <div className="w-8 h-8 rounded-lg bg-lagoon-50 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-lagoon-600" />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-extrabold text-leaf-900">
+                Always learning
+              </p>
+              <p className="text-[9px] text-leaf-600/50">
+                Growing with you
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+
+      {/* ===== RIGHT: CONTENT ===== */}
+      <div className="order-1 lg:order-2">
+
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-leaf-50 border border-leaf-100 text-leaf-700 text-sm font-bold mb-6">
+          <Sparkles className="w-4 h-4" />
+          Meet Your Eco Guide
+        </div>
+
+
+        {/* Heading */}
+        <h2 className="text-3xl md:text-5xl font-extrabold text-leaf-900 leading-tight">
+          A little guidance
+          <br />
+          <span className="gradient-text">
+            can go a long way.
+          </span>
+        </h2>
+
+
+        {/* Description */}
+        <p className="mt-6 text-lg text-leaf-600/70 leading-relaxed max-w-xl">
+          Meet your AI-powered environmental companion. Eco Guide
+          helps students understand complex topics, discover
+          sustainable choices and find meaningful ways to make a
+          difference.
+        </p>
+
+
+        {/* Features */}
+        <div className="mt-9 space-y-5">
+
+          {/* Feature 1 */}
+          <div className="flex gap-4">
+
+            <div className="w-11 h-11 rounded-xl bg-leaf-50 text-leaf-600 flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5" />
+            </div>
+
+            <div>
+              <h3 className="font-extrabold text-leaf-900">
+                Understand anything
+              </h3>
+
+              <p className="mt-1 text-sm text-leaf-600/60 leading-relaxed">
+                Get simple, student-friendly explanations for
+                environmental concepts.
+              </p>
+            </div>
+
+          </div>
+
+
+          {/* Feature 2 */}
+          <div className="flex gap-4">
+
+            <div className="w-11 h-11 rounded-xl bg-lagoon-50 text-lagoon-600 flex items-center justify-center flex-shrink-0">
+              <Lightbulb className="w-5 h-5" />
+            </div>
+
+            <div>
+              <h3 className="font-extrabold text-leaf-900">
+                Discover better choices
+              </h3>
+
+              <p className="mt-1 text-sm text-leaf-600/60 leading-relaxed">
+                Receive practical eco-friendly tips based on your
+                interests and learning journey.
+              </p>
+            </div>
+
+          </div>
+
+
+          {/* Feature 3 */}
+          <div className="flex gap-4">
+
+            <div className="w-11 h-11 rounded-xl bg-sun-50 text-sun-600 flex items-center justify-center flex-shrink-0">
+              <Target className="w-5 h-5" />
+            </div>
+
+            <div>
+              <h3 className="font-extrabold text-leaf-900">
+                Know what to do next
+              </h3>
+
+              <p className="mt-1 text-sm text-leaf-600/60 leading-relaxed">
+                Get guidance that connects what you learn with
+                real-world environmental action.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+            {/* ===== FINAL CTA ===== */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+           <div className="bg-leaf-50/60 border border-leaf-100 rounded-4xl px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+            <img
+              src="/earth-mascot.png"
+              alt="Happy Earth mascot"
+              className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover flex-shrink-0"
+            />
+
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-xl md:text-2xl font-extrabold text-leaf-900">
+                Together, we can build a better planet.
+              </h2>
+              <p className="mt-1 text-leaf-600/70 flex items-center justify-center md:justify-start gap-1.5">
+                Join EcoSpark today and start your green journey!
+                <Leaf className="w-4 h-4 text-leaf-500" />
+              </p>
+            </div>
+
+            <Button
+              size="lg"
+              onClick={handleStart}
+              
+              className="flex-shrink-0 !rounded-full"
+            >
+              Get Started 🍃
+            </Button>
+          </div>
         </div>
       </section>
 
