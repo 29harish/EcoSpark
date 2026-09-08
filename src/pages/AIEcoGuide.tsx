@@ -21,62 +21,78 @@ export function AIEcoGuide() {
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
 
-  const handleSend = async (text: string) => {
-    if (!text.trim() || typing) return;
+ const handleSend = async (text: string) => {
+  if (!text.trim() || typing) return;
 
-    const userMessage = text.trim();
+  const userMessage = text.trim();
 
-    setMessages(prev => [
-      ...prev,
-      { role: 'user', text: userMessage },
-    ]);
+  // Send the existing conversation to the backend.
+  // Ignore the initial welcome message because it is UI-only.
+  const history = messages
+    .filter((message) => message.text !== "Hi there! I'm your AI Eco Guide 🌱 Ask me anything about the environment, sustainability, or how to live greener. What would you like to learn?")
+    .map((message) => ({
+      role:
+        message.role === 'ai'
+          ? ('assistant' as const)
+          : ('user' as const),
+      content: message.text,
+    }));
 
-    setInput('');
-    setTyping(true);
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: 'user',
+      text: userMessage,
+    },
+  ]);
 
-    try {
-      const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/ai/chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: userMessage,
-          }),
-        }
-      );
+  setInput('');
+  setTyping(true);
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.error || 'Failed to get AI response'
-        );
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/ai/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          history,
+        }),
       }
+    );
 
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'ai',
-          text: data.reply,
-        },
-      ]);
-    } catch (error) {
-      console.error('Eco Guide error:', error);
+    const data = await response.json();
 
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'ai',
-          text: "Sorry, I'm having trouble connecting right now. Please try again in a moment. 🌱",
-        },
-      ]);
-    } finally {
-      setTyping(false);
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error || 'Failed to get AI response'
+      );
     }
-  };
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'ai',
+        text: data.reply,
+      },
+    ]);
+  } catch (error) {
+    console.error('Eco Guide error:', error);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'ai',
+        text: "Sorry, I'm having trouble connecting right now. Please try again in a moment. 🌱",
+      },
+    ]);
+  } finally {
+    setTyping(false);
+  }
+};
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">

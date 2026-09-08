@@ -19,7 +19,7 @@ app.get('/api/health', (_req, res) => {
 
 app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, history = [] } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
@@ -28,7 +28,7 @@ app.post('/api/ai/chat', async (req, res) => {
       });
     }
 
-    const reply = await askEcoGuide(message);
+    const reply = await askEcoGuide(message, history);
 
     return res.json({
       success: true,
