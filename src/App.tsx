@@ -1,4 +1,5 @@
 import { AppProvider, useApp } from '@/context/AppContext';
+import { Assessment } from '@/pages/Assessment';
 import { FeedbackProvider } from '@/components/ui/FeedbackToast';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -86,6 +87,9 @@ if (currentPage === 'landing' && !user) {
 
       case 'profile':
         return <Profile />;
+      
+      case 'assessment':
+        return <Assessment />;
 
       default:
         return <Dashboard />;

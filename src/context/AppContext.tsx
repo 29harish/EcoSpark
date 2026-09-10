@@ -27,6 +27,7 @@ export type PageId =
   | 'challenges'
   | 'landing'
   | 'ai-guide'
+  | 'assessment'
   | 'rewards'
   | 'profile'
   | 'login'

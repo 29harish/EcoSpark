@@ -170,6 +170,48 @@
 .animate-quiz-enter { animation: quiz-enter 0.3s ease-out both; }
 .animate-answer-reveal { animation: answer-reveal 0.25s ease-out both; }
 
+/* Eco Garden playfield */
+.garden-sky {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255,255,255,.8) 0 2%, transparent 2.5%),
+    radial-gradient(circle at 75% 16%, rgba(255,255,255,.5) 0 2.5%, transparent 3%),
+    linear-gradient(180deg, #b9e6df 0%, #d8edc0 37%, #a7d474 38%, #8bc663 100%);
+}
+.garden-path {
+  background: repeating-linear-gradient(135deg, rgba(255,255,255,.28) 0 12px, rgba(255,255,255,.18) 12px 24px);
+  border-left: 8px solid rgba(238,222,166,.45);
+  border-right: 8px solid rgba(238,222,166,.45);
+  opacity: .85;
+}
+.build-plot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin: -21px;
+  border: 2px dashed rgba(255,255,255,.7);
+  border-radius: 999px;
+  color: white;
+  background: rgba(54,125,77,.25);
+  transition: transform .2s ease, background .2s ease;
+}
+.build-plot:hover { transform: scale(1.12); background: rgba(54,125,77,.5); }
+.garden-object { padding: .25rem; border-radius: 1.25rem; transition: transform .2s ease, filter .2s ease; }
+.garden-object:hover, .garden-object.selected { transform: translate(-50%, -50%) scale(1.12); filter: drop-shadow(0 7px 7px rgba(31,75,44,.3)); }
+.garden-object.selected { outline: 3px solid rgba(255,255,255,.8); outline-offset: 4px; }
+.object-glow { position: absolute; inset: 12px; z-index: -1; border-radius: 999px; filter: blur(12px); opacity: .45; }
+.category-biodiversity { background: #b6df83; }
+.category-water { background: #72d4db; }
+.category-waste { background: #f3c66d; }
+.category-energy { background: #ffd36b; }
+.category-soil { background: #d7a878; }
+.eco-core-pulse { animation: core-pulse 3s ease-in-out infinite; }
+@keyframes core-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(66, 185, 122, .2), 0 10px 22px rgba(25, 82, 63, .28); }
+  50% { box-shadow: 0 0 0 13px rgba(66, 185, 122, 0), 0 10px 22px rgba(25, 82, 63, .28); }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

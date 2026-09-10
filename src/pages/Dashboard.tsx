@@ -306,6 +306,14 @@ export function Dashboard() {
           </Card>
         </div>
       </div>
+      <button
+  onClick={() => navigate('assessment')}
+  className="px-6 py-3 rounded-xl bg-leaf-600 text-white font-semibold hover:bg-leaf-700 transition"
+>
+  🌱 Take Eco Assessment
+</button>
     </div>
+
+    
   );
 }
