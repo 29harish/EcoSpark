@@ -16,6 +16,7 @@ import {
   Flame,
   Coins,
   LogOut,
+  CheckCircle2, 
 } from 'lucide-react';
 import { useApp, type PageId } from '@/context/AppContext';
 
@@ -36,6 +37,11 @@ const navItems: NavItem[] = [
   { id: 'ai-guide', label: 'AI Eco Guide', icon: <Bot className="w-5 h-5" /> },
   { id: 'rewards', label: 'Rewards', icon: <Gift className="w-5 h-5" /> },
   { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
+  {
+  id: 'admin-verification',
+  label: 'Admin Verification',
+  icon: <CheckCircle2 />,
+},
 ];
 
 export function Sidebar() {
