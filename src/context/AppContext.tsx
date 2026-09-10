@@ -30,6 +30,7 @@ export type PageId =
   | 'assessment'
   | 'rewards'
   | 'profile'
+  | 'admin-verification'
   | 'login'
   | 'signup';
 
