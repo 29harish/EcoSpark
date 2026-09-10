@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { auth } from '@/lib/firebase';
+import { apiRequest } from '@/lib/api';
 
 type Topic =
   | 'Biodiversity'
@@ -47,8 +49,6 @@ const topicIcons: Record<Topic, string> = {
 };
 
 const questions: Question[] = [
-  // ---------------- EASY ----------------
-
   {
     id: 1,
     topic: 'Biodiversity',
@@ -113,8 +113,6 @@ const questions: Question[] = [
       'Solar energy comes from the Sun and is a renewable source of energy.',
   },
 
-  // ---------------- MEDIUM ----------------
-
   {
     id: 5,
     topic: 'Soil',
@@ -134,7 +132,8 @@ const questions: Question[] = [
   {
     id: 6,
     topic: 'Climate & Pollution',
-    question: 'Which gas is a major greenhouse gas contributing to global warming?',
+    question:
+      'Which gas is a major greenhouse gas contributing to global warming?',
     options: [
       'Carbon dioxide',
       'Oxygen',
@@ -179,8 +178,6 @@ const questions: Question[] = [
     explanation:
       'Groundwater is an important source of freshwater for people, agriculture and ecosystems.',
   },
-
-  // ---------------- HARD ----------------
 
   {
     id: 9,
@@ -251,6 +248,62 @@ const questions: Question[] = [
   },
 ];
 
+const interestOptions = [
+  {
+    id: 'biodiversity',
+    icon: '🌳',
+    title: 'Wildlife & Biodiversity',
+  },
+  {
+    id: 'climate',
+    icon: '🌍',
+    title: 'Climate Change',
+  },
+  {
+    id: 'water',
+    icon: '💧',
+    title: 'Water Conservation',
+  },
+  {
+    id: 'waste',
+    icon: '♻️',
+    title: 'Waste & Recycling',
+  },
+  {
+    id: 'energy',
+    icon: '☀️',
+    title: 'Renewable Energy',
+  },
+  {
+    id: 'soil',
+    icon: '🌱',
+    title: 'Soil & Agriculture',
+  },
+];
+
+const goalOptions = [
+  {
+    id: 'knowledge',
+    icon: '🧠',
+    title: 'Improve my environmental knowledge',
+  },
+  {
+    id: 'habits',
+    icon: '🌱',
+    title: 'Build better sustainable habits',
+  },
+  {
+    id: 'community',
+    icon: '🤝',
+    title: 'Make an impact in my community',
+  },
+  {
+    id: 'skills',
+    icon: '🚀',
+    title: 'Learn practical sustainability skills',
+  },
+];
+
 function shuffle<T>(items: T[]): T[] {
   const array = [...items];
 
@@ -276,24 +329,37 @@ function getLevelDescription(level: string) {
   switch (level) {
     case 'Eco Beginner':
       return 'Every eco journey starts somewhere. Let’s build your foundation.';
+
     case 'Eco Explorer':
       return 'You have started your eco journey. There is plenty more to discover.';
+
     case 'Eco Learner':
       return 'You have a good foundation. Let’s strengthen your eco knowledge.';
+
     case 'Eco Guardian':
       return 'Great work! You understand many important environmental concepts.';
+
     case 'Eco Champion':
       return 'Excellent! Your environmental knowledge is already very strong.';
+
     default:
       return 'Keep learning and growing with EcoSpark.';
   }
 }
 
 function getScoreMessage(score: number) {
-  if (score < 40) return 'Every great environmental journey starts with learning.';
-  if (score < 60) return 'You have a foundation. Now let’s grow your knowledge.';
-  if (score < 80) return 'Great foundation! A few areas can become even stronger.';
-  if (score < 90) return 'Excellent environmental knowledge!';
+  if (score < 40)
+    return 'Every great environmental journey starts with learning.';
+
+  if (score < 60)
+    return 'You have a foundation. Now let’s grow your knowledge.';
+
+  if (score < 80)
+    return 'Great foundation! A few areas can become even stronger.';
+
+  if (score < 90)
+    return 'Excellent environmental knowledge!';
+
   return 'Outstanding! You are an Eco Champion!';
 }
 
@@ -302,26 +368,54 @@ export function Assessment() {
 
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
+
   const [answers, setAnswers] = useState<Record<number, string>>({});
+
   const [showReview, setShowReview] = useState(false);
 
-  // Randomize once when the assessment component is created.
-  const [assessmentQuestions] = useState<Question[]>(() =>
-    shuffle(questions).map((question) => ({
+  const [profileStep, setProfileStep] = useState<
+    'interests' | 'goals'
+  >('interests');
+
+  const [interests, setInterests] = useState<string[]>([]);
+  const [goals, setGoals] = useState<string[]>([]);
+
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const [assessmentQuestions] = useState<Question[]>(() => {
+    const easy = shuffle(
+      questions.filter((q) => q.difficulty === 'Easy')
+    );
+
+    const medium = shuffle(
+      questions.filter((q) => q.difficulty === 'Medium')
+    );
+
+    const hard = shuffle(
+      questions.filter((q) => q.difficulty === 'Hard')
+    );
+
+    return [...easy, ...medium, ...hard].map((question) => ({
       ...question,
       options: shuffle(question.options),
-    }))
-  );
+    }));
+  });
 
   const question = assessmentQuestions[currentQuestion];
 
-  const selectedAnswer = answers[question.id];
+  const selectedAnswer = question
+    ? answers[question.id]
+    : undefined;
 
-  const progress =
-    ((currentQuestion + 1) / assessmentQuestions.length) * 100;
+  const progress = question
+    ? ((currentQuestion + 1) / assessmentQuestions.length) * 100
+    : 0;
 
   const selectAnswer = (answer: string) => {
+    if (!question) return;
+
     setAnswers((previous) => ({
       ...previous,
       [question.id]: answer,
@@ -332,7 +426,7 @@ export function Assessment() {
     if (!selectedAnswer) return;
 
     if (currentQuestion === assessmentQuestions.length - 1) {
-      setFinished(true);
+      setProfileStep('interests');
       setStarted(false);
       return;
     }
@@ -346,13 +440,30 @@ export function Assessment() {
     }
   };
 
+  const toggleInterest = (interest: string) => {
+    setInterests((previous) =>
+      previous.includes(interest)
+        ? previous.filter((item) => item !== interest)
+        : [...previous, interest]
+    );
+  };
+
+  const toggleGoal = (goal: string) => {
+    setGoals((previous) =>
+      previous.includes(goal)
+        ? previous.filter((item) => item !== goal)
+        : [...previous, goal]
+    );
+  };
+
   const results = useMemo(() => {
-    const answerRecords: AnswerRecord[] = assessmentQuestions.map((q) => ({
-      questionId: q.id,
-      selectedAnswer: answers[q.id] ?? 'Not sure',
-      correctAnswer: q.correctAnswer,
-      topic: q.topic,
-    }));
+    const answerRecords: AnswerRecord[] =
+      assessmentQuestions.map((q) => ({
+        questionId: q.id,
+        selectedAnswer: answers[q.id] ?? 'Not sure',
+        correctAnswer: q.correctAnswer,
+        topic: q.topic,
+      }));
 
     const correctAnswers = answerRecords.filter(
       (answer) => answer.selectedAnswer === answer.correctAnswer
@@ -372,9 +483,12 @@ export function Assessment() {
           (q) => answers[q.id] === q.correctAnswer
         ).length;
 
-        result[topic] = Math.round(
-          (topicCorrect / topicQuestions.length) * 100
-        );
+        result[topic] =
+          topicQuestions.length > 0
+            ? Math.round(
+                (topicCorrect / topicQuestions.length) * 100
+              )
+            : 0;
 
         return result;
       },
@@ -409,7 +523,18 @@ export function Assessment() {
     };
   }, [answers, assessmentQuestions]);
 
-  const saveAssessment = () => {
+  const finishProfile = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error('No logged-in Firebase user found.');
+      return;
+    }
+
+    if (savingProfile) return;
+
+    setSavingProfile(true);
+
     const assessmentResult = {
       overallScore: results.overallScore,
       topicScores: results.topicScores,
@@ -417,27 +542,234 @@ export function Assessment() {
       weakTopics: results.weakTopics,
       knowledgeGaps: results.knowledgeGaps,
       knowledgeLevel: results.level,
+      interests,
+      goals,
       recommendedTopics: results.weakTopics,
       answers: results.answerRecords,
       completedAt: new Date().toISOString(),
     };
 
     try {
+      // Local backup
       localStorage.setItem(
         'ecospark-assessment-result',
         JSON.stringify(assessmentResult)
       );
 
-      localStorage.setItem('ecospark-assessment-completed', 'true');
-    } catch {
-      console.warn('Unable to save assessment result.');
-    }
+      localStorage.setItem(
+        'ecospark-assessment-completed',
+        'true'
+      );
 
-    navigate('dashboard');
+      // Save profile through Firebase-authenticated backend
+      await apiRequest('/api/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          full_name: user.displayName ?? '',
+          eco_level: results.level,
+          eco_score: results.overallScore,
+          interests,
+          goals,
+          topic_scores: results.topicScores,
+          strengths: results.strengths,
+          knowledge_gaps: results.knowledgeGaps,
+          assessment_completed: true,
+        }),
+      });
+
+      // Show the newly created Eco Profile
+      setFinished(true);
+    } catch (error) {
+      console.error('Unable to save Eco Profile:', error);
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   // =========================================================
-  // WELCOME SCREEN
+  // INTERESTS
+  // =========================================================
+
+  if (!started && !finished && profileStep === 'interests') {
+    if (Object.keys(answers).length === assessmentQuestions.length) {
+      return (
+        <div className="min-h-screen flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-4xl">
+            <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-xl border border-leaf-100 overflow-hidden">
+              <div className="p-8 md:p-12">
+                <div className="text-center mb-10">
+                  <div className="mx-auto mb-5 w-20 h-20 rounded-2xl bg-leaf-100 flex items-center justify-center text-4xl">
+                    🎯
+                  </div>
+
+                  <p className="text-sm font-bold text-leaf-600 mb-2">
+                    Step 2 of 3
+                  </p>
+
+                  <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                    What interests you?
+                  </h1>
+
+                  <p className="text-gray-500 mt-3 max-w-xl mx-auto">
+                    Choose the environmental topics you would enjoy
+                    learning about. Select as many as you want.
+                  </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {interestOptions.map((item) => {
+                    const selected = interests.includes(item.id);
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => toggleInterest(item.id)}
+                        className={`p-5 rounded-2xl border-2 text-left transition-all ${
+                          selected
+                            ? 'border-leaf-500 bg-leaf-50 shadow-sm'
+                            : 'border-gray-100 hover:border-leaf-200 hover:bg-leaf-50/40'
+                        }`}
+                      >
+                        <div className="text-3xl mb-3">
+                          {item.icon}
+                        </div>
+
+                        <div className="font-bold text-gray-800">
+                          {item.title}
+                        </div>
+
+                        <div className="mt-3">
+                          <span
+                            className={`text-xs font-bold ${
+                              selected
+                                ? 'text-leaf-700'
+                                : 'text-gray-400'
+                            }`}
+                          >
+                            {selected ? '✓ Selected' : 'Select'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-100">
+                  <span className="text-sm text-gray-400">
+                    {interests.length} selected
+                  </span>
+
+                  <button
+                    disabled={interests.length === 0}
+                    onClick={() => setProfileStep('goals')}
+                    className="px-7 py-3 rounded-xl bg-leaf-600 text-white font-bold disabled:opacity-40 hover:bg-leaf-700 transition"
+                  >
+                    Continue →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // =========================================================
+  // GOALS
+  // =========================================================
+
+  if (!started && !finished && profileStep === 'goals') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-4xl">
+          <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-xl border border-leaf-100 overflow-hidden">
+            <div className="p-8 md:p-12">
+              <div className="text-center mb-10">
+                <div className="mx-auto mb-5 w-20 h-20 rounded-2xl bg-leaf-100 flex items-center justify-center text-4xl">
+                  🚀
+                </div>
+
+                <p className="text-sm font-bold text-leaf-600 mb-2">
+                  Step 3 of 3
+                </p>
+
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                  What do you want to achieve?
+                </h1>
+
+                <p className="text-gray-500 mt-3 max-w-xl mx-auto">
+                  Your goals help EcoSpark recommend the right
+                  learning and real-world activities.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                {goalOptions.map((item) => {
+                  const selected = goals.includes(item.id);
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => toggleGoal(item.id)}
+                      className={`p-5 rounded-2xl border-2 text-left transition-all flex items-center gap-4 ${
+                        selected
+                          ? 'border-leaf-500 bg-leaf-50 shadow-sm'
+                          : 'border-gray-100 hover:border-leaf-200 hover:bg-leaf-50/40'
+                      }`}
+                    >
+                      <div className="text-3xl">
+                        {item.icon}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="font-bold text-gray-800">
+                          {item.title}
+                        </div>
+
+                        <div
+                          className={`text-xs font-bold mt-2 ${
+                            selected
+                              ? 'text-leaf-700'
+                              : 'text-gray-400'
+                          }`}
+                        >
+                          {selected ? '✓ Selected' : 'Select'}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-100">
+                <button
+                  onClick={() => setProfileStep('interests')}
+                  disabled={savingProfile}
+                  className="px-5 py-3 rounded-xl text-gray-600 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  ← Back
+                </button>
+
+                <button
+                  disabled={goals.length === 0 || savingProfile}
+                  onClick={finishProfile}
+                  className="px-7 py-3 rounded-xl bg-leaf-600 text-white font-bold disabled:opacity-40 hover:bg-leaf-700 transition"
+                >
+                  {savingProfile
+                    ? 'Creating Profile...'
+                    : 'Create My Eco Profile →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // WELCOME
   // =========================================================
 
   if (!started && !finished) {
@@ -446,7 +778,6 @@ export function Assessment() {
         <div className="w-full max-w-4xl">
           <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-xl border border-leaf-100 overflow-hidden">
             <div className="p-8 md:p-12 text-center">
-
               <div className="mx-auto mb-6 w-24 h-24 rounded-[2rem] bg-leaf-100 flex items-center justify-center text-5xl shadow-sm">
                 🌱
               </div>
@@ -468,7 +799,6 @@ export function Assessment() {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto my-10">
-
                 <InfoCard
                   icon="🧠"
                   title="12 Questions"
@@ -476,17 +806,16 @@ export function Assessment() {
                 />
 
                 <InfoCard
-                  icon="⏱️"
-                  title="3–5 Minutes"
-                  subtitle="Take your time"
+                  icon="🎯"
+                  title="Your Interests"
+                  subtitle="Choose what excites you"
                 />
 
                 <InfoCard
-                  icon="🎯"
-                  title="Personalized"
-                  subtitle="Built around you"
+                  icon="🚀"
+                  title="Your Goals"
+                  subtitle="Shape your journey"
                 />
-
               </div>
 
               <div className="flex flex-wrap justify-center gap-3 mb-10">
@@ -508,7 +837,8 @@ export function Assessment() {
               </button>
 
               <p className="text-xs text-gray-400 mt-5">
-                Your answers help EcoSpark personalize your learning path.
+                Your answers help EcoSpark personalize your learning
+                path.
               </p>
             </div>
           </div>
@@ -518,14 +848,13 @@ export function Assessment() {
   }
 
   // =========================================================
-  // RESULTS SCREEN
+  // RESULTS
   // =========================================================
 
   if (finished) {
     return (
       <div className="min-h-screen px-4 py-8 md:px-8">
         <div className="max-w-5xl mx-auto">
-
           <div className="text-center mb-8">
             <div className="text-5xl mb-4">🎉</div>
 
@@ -544,7 +873,6 @@ export function Assessment() {
 
           {/* Main score */}
           <div className="bg-white rounded-[2rem] border border-leaf-100 shadow-lg p-8 mb-6 text-center">
-
             <div className="w-36 h-36 mx-auto rounded-full bg-leaf-50 border-[10px] border-leaf-200 flex items-center justify-center mb-5">
               <div>
                 <div className="text-4xl font-bold text-leaf-700">
@@ -566,13 +894,66 @@ export function Assessment() {
             </p>
 
             <div className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 text-sm text-gray-600">
-              ✅ {results.correct} / {assessmentQuestions.length} correct
+              ✅ {results.correct} / {assessmentQuestions.length}{' '}
+              correct
+            </div>
+          </div>
+
+          {/* Interests + Goals */}
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-[2rem] border border-gray-100 p-6">
+              <div className="text-3xl mb-3">🎯</div>
+
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Your Interests
+              </h2>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                {interests.map((interest) => {
+                  const item = interestOptions.find(
+                    (option) => option.id === interest
+                  );
+
+                  return (
+                    <span
+                      key={interest}
+                      className="px-3 py-2 rounded-xl bg-leaf-50 text-leaf-700 text-sm font-semibold"
+                    >
+                      {item?.icon} {item?.title}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-gray-100 p-6">
+              <div className="text-3xl mb-3">🚀</div>
+
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Your Goals
+              </h2>
+
+              <div className="space-y-2 mt-4">
+                {goals.map((goal) => {
+                  const item = goalOptions.find(
+                    (option) => option.id === goal
+                  );
+
+                  return (
+                    <div
+                      key={goal}
+                      className="p-3 rounded-xl bg-gray-50 text-sm font-semibold text-gray-700"
+                    >
+                      {item?.icon} {item?.title}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           {/* Topic scores */}
           <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 md:p-8 mb-6">
-
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900">
                 Your Eco Knowledge
@@ -618,11 +999,8 @@ export function Assessment() {
 
           {/* Strengths and gaps */}
           <div className="grid md:grid-cols-2 gap-6 mb-6">
-
             <div className="bg-white rounded-[2rem] border border-gray-100 p-6">
-              <div className="text-3xl mb-3">
-                🏆
-              </div>
+              <div className="text-3xl mb-3">🏆</div>
 
               <h2 className="text-xl font-bold text-gray-900 mb-2">
                 Your Strengths
@@ -649,16 +1027,14 @@ export function Assessment() {
             </div>
 
             <div className="bg-white rounded-[2rem] border border-gray-100 p-6">
-              <div className="text-3xl mb-3">
-                🎯
-              </div>
+              <div className="text-3xl mb-3">🎯</div>
 
               <h2 className="text-xl font-bold text-gray-900 mb-2">
                 Knowledge Gaps
               </h2>
 
               <p className="text-sm text-gray-500 mb-5">
-                These areas will help shape your personalized journey.
+                These areas will shape your personalized journey.
               </p>
 
               {results.knowledgeGaps.length > 0 ? (
@@ -686,7 +1062,6 @@ export function Assessment() {
 
           {/* Personalized path */}
           <div className="bg-gradient-to-br from-leaf-700 to-leaf-600 rounded-[2rem] p-6 md:p-8 text-white mb-6">
-
             <p className="text-leaf-100 font-semibold mb-2">
               Your Personalized Learning Path
             </p>
@@ -697,7 +1072,7 @@ export function Assessment() {
 
             <p className="text-leaf-50 mb-6 max-w-2xl">
               EcoSpark will prioritize these topics based on your
-              assessment results.
+              assessment results and interests.
             </p>
 
             <div className="space-y-3">
@@ -732,9 +1107,8 @@ export function Assessment() {
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-
             <button
               onClick={() => setShowReview(!showReview)}
               className="px-6 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition"
@@ -743,18 +1117,16 @@ export function Assessment() {
             </button>
 
             <button
-              onClick={saveAssessment}
+              onClick={() => navigate('dashboard')}
               className="px-7 py-3 rounded-xl bg-leaf-600 text-white font-bold hover:bg-leaf-700 transition shadow-lg"
             >
               Continue to Dashboard →
             </button>
-
           </div>
 
-          {/* Review answers */}
+          {/* Review */}
           {showReview && (
             <div className="mt-8 space-y-4">
-
               <h2 className="text-xl font-bold text-gray-900">
                 Assessment Review
               </h2>
@@ -762,8 +1134,7 @@ export function Assessment() {
               {assessmentQuestions.map((q, index) => {
                 const selected = answers[q.id];
 
-                const correct =
-                  selected === q.correctAnswer;
+                const correct = selected === q.correctAnswer;
 
                 return (
                   <div
@@ -785,9 +1156,7 @@ export function Assessment() {
                         </div>
                       </div>
 
-                      <span>
-                        {correct ? '✅' : '❌'}
-                      </span>
+                      <span>{correct ? '✅' : '❌'}</span>
                     </div>
 
                     <div className="text-sm text-gray-600">
@@ -812,23 +1181,19 @@ export function Assessment() {
               })}
             </div>
           )}
-
         </div>
       </div>
     );
   }
 
   // =========================================================
-  // QUESTION SCREEN
+  // QUESTIONS
   // =========================================================
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8">
       <div className="max-w-3xl mx-auto">
-
-        {/* Header */}
         <div className="flex items-center justify-between mb-5">
-
           <div>
             <p className="text-sm font-bold text-leaf-600">
               EcoSpark Assessment
@@ -842,10 +1207,8 @@ export function Assessment() {
           <span className="text-sm font-bold text-gray-500">
             {currentQuestion + 1} / {assessmentQuestions.length}
           </span>
-
         </div>
 
-        {/* Progress */}
         <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-8">
           <div
             className="h-full bg-leaf-500 rounded-full transition-all duration-500"
@@ -855,11 +1218,8 @@ export function Assessment() {
           />
         </div>
 
-        {/* Question card */}
         <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl p-6 md:p-10">
-
           <div className="flex items-center justify-between mb-6">
-
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-leaf-50 text-leaf-700 text-sm font-bold">
               {topicIcons[question.topic]} {question.topic}
             </span>
@@ -875,18 +1235,14 @@ export function Assessment() {
             >
               {question.difficulty}
             </span>
-
           </div>
 
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-8">
             {question.question}
           </h2>
 
-          {/* Options */}
           <div className="space-y-3">
-
             {question.options.map((option, index) => {
-
               const selected = selectedAnswer === option;
 
               return (
@@ -899,7 +1255,6 @@ export function Assessment() {
                       : 'border-gray-100 bg-white hover:border-leaf-200 hover:bg-leaf-50/50'
                   }`}
                 >
-
                   <span
                     className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-bold ${
                       selected
@@ -919,12 +1274,10 @@ export function Assessment() {
                   >
                     {option}
                   </span>
-
                 </button>
               );
             })}
 
-            {/* Not sure */}
             <button
               onClick={() => selectAnswer('Not sure')}
               className={`w-full text-left p-4 md:p-5 rounded-2xl border-2 transition-all flex items-center gap-4 ${
@@ -933,7 +1286,6 @@ export function Assessment() {
                   : 'border-dashed border-gray-200 bg-gray-50/50 hover:border-gray-300'
               }`}
             >
-
               <span
                 className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center font-bold ${
                   selectedAnswer === 'Not sure'
@@ -953,14 +1305,10 @@ export function Assessment() {
               >
                 I'm not sure
               </span>
-
             </button>
-
           </div>
 
-          {/* Navigation */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
-
             <button
               onClick={previousQuestion}
               disabled={currentQuestion === 0}
@@ -981,18 +1329,16 @@ export function Assessment() {
               className="px-6 py-3 rounded-xl bg-leaf-600 text-white font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-leaf-700 transition"
             >
               {currentQuestion === assessmentQuestions.length - 1
-                ? 'Finish Assessment'
+                ? 'Continue →'
                 : 'Next →'}
             </button>
-
           </div>
-
         </div>
 
         <p className="text-center text-sm text-gray-400 mt-5">
-          🌱 There are no wrong journeys — every answer helps personalize yours.
+          🌱 There are no wrong journeys — every answer helps
+          personalize yours.
         </p>
-
       </div>
     </div>
   );

@@ -63,7 +63,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       displayName: formData.name,
     });
 
-    navigate('login');
+    navigate('assessment');
   } catch (error: any) {
     console.error(error);
 
