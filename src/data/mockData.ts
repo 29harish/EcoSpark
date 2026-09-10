@@ -52,6 +52,9 @@ export interface Mission {
   progress: number; // 0-100
   completed: boolean;
   color: string;
+    requiresProof?: boolean;
+  proofType?: 'plant-tree';
+  verificationStatus?: 'not-started' | 'pending' | 'approved' | 'rejected';
 }
 
 export interface Achievement {
