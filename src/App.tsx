@@ -17,6 +17,7 @@ import { Challenges } from '@/pages/Challenges';
 import { AIEcoGuide } from '@/pages/AIEcoGuide';
 import { Rewards } from '@/pages/Rewards';
 import { Profile } from '@/pages/Profile';
+import { AdminVerification } from '@/pages/AdminVerification';
 
 import Login from '@/pages/auth/login';
 import Signup from '@/pages/auth/signup';
@@ -90,6 +91,9 @@ if (currentPage === 'landing' && !user) {
       
       case 'assessment':
         return <Assessment />;
+
+        case 'admin-verification':
+  return <AdminVerification />;
 
       default:
         return <Dashboard />;
