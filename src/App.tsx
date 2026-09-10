@@ -1,3 +1,4 @@
+import { AdminVerification } from '@/pages/AdminVerification';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { FeedbackProvider } from '@/components/ui/FeedbackToast';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -86,6 +87,8 @@ if (currentPage === 'landing' && !user) {
 
       case 'profile':
         return <Profile />;
+        case 'admin-verification':
+  return <AdminVerification />;
 
       default:
         return <Dashboard />;
