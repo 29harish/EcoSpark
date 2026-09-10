@@ -29,6 +29,7 @@ export type PageId =
   | 'ai-guide'
   | 'rewards'
   | 'profile'
+  | 'admin-verification'
   | 'login'
   | 'signup';
 
