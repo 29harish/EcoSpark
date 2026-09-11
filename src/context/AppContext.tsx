@@ -4,6 +4,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
   type ReactNode,
 } from 'react';
 
@@ -16,7 +17,7 @@ import {
   type Mission,
 } from '@/data/mockData';
 import type { AssessmentResult } from '@/data/assessment';
-import { loadProfile, saveAssessmentProfile } from '@/lib/profileStore';
+import { loadProfile, saveAssessmentProfile, saveReward } from '@/lib/profileStore';
 
 export type PageId =
   | 'dashboard'
@@ -55,6 +56,7 @@ interface AppState {
   xpInCurrentLevel: number;
   coins: number;
   streak: number;
+  impactScore: number;
   gardenLevel: number;
   gardenRank: string;
 
@@ -76,9 +78,9 @@ interface AppState {
   profile: UserProfile | null;
   hasCompletedAssessment: (uid: string) => boolean;
   completeAssessment: (result: AssessmentResult) => Promise<void>;
+  grantReward: (activity: 'lesson' | 'quiz' | 'mission', xp: number, coins: number) => Promise<void>;
 }
 
-const LEVEL_XP_BASE = 250;
 const XP_PER_LEVEL = 250;
 
 function calculateLevel(xp: number): { level: number; xpInCurrentLevel: number; xpForNextLevel: number } {
@@ -100,6 +102,8 @@ interface PersistedState {
   assessmentCompleted?: boolean;
   assessmentResult?: AssessmentResult | null;
   profile?: UserProfile | null;
+  streak?: number;
+  lastActivityDate?: string | null;
 }
 
 export interface UserProfile {
@@ -114,11 +118,13 @@ export interface UserProfile {
   recommendedTopics: AssessmentResult['recommendedTopics'];
   assessmentCompleted: boolean;
   assessmentCompletedAt: string;
+  xp?: number;
+  ecoCoins?: number;
 }
 
-function loadPersistedState(): Partial<PersistedState> | null {
+function loadPersistedState(uid: string): Partial<PersistedState> | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(`${STORAGE_KEY}:${uid}`);
     if (!raw) return null;
     return JSON.parse(raw) as Partial<PersistedState>;
   } catch {
@@ -126,23 +132,24 @@ function loadPersistedState(): Partial<PersistedState> | null {
   }
 }
 
-const persisted = loadPersistedState();
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState<PageId>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
-  const [xp, setXp] = useState(persisted?.xp ?? 2450);
-  const [coins, setCoins] = useState(persisted?.coins ?? 340);
-  const [streak] = useState(12);
-  const [gardenLevel, setGardenLevel] = useState(persisted?.gardenLevel ?? 3);
+  const [xp, setXp] = useState(0);
+  const [coins, setCoins] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [lastActivityDate, setLastActivityDate] = useState<string | null>(null);
+  const [gardenLevel, setGardenLevel] = useState(3);
 
-  const [lessons, setLessons] = useState<Lesson[]>(persisted?.lessons ?? initialLessons);
-  const [missions, setMissions] = useState<Mission[]>(persisted?.missions ?? initialMissions);
-  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(persisted?.assessmentResult ?? null);
-  const [profile, setProfile] = useState<UserProfile | null>(persisted?.profile ?? null);
+  const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
+  const [missions, setMissions] = useState<Mission[]>(initialMissions);
+  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stateHydrated, setStateHydrated] = useState(false);
+  const coinsRef = useRef(coins);
   const assessmentCompleted = Boolean(
     profile?.assessmentCompleted &&
     (!user || profile.uid === user.uid)
@@ -152,6 +159,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const gardenRank =
     level >= 12 ? 'Earth Guardian' : level >= 5 ? 'Forest Explorer' : 'Seedling';
+  const impactScore = Math.round(xp * 0.1 + coins * 0.05 + streak * 5);
 
   const navigate = useCallback((page: PageId) => {
     setCurrentPage(page);
@@ -172,24 +180,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addXP = useCallback((amount: number) => {
-    setXp((prev) => prev + amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 1000) return;
+    setXp((prev) => prev + Math.floor(amount));
   }, []);
 
   const addCoins = useCallback((amount: number) => {
-    setCoins((prev) => prev + amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 1000) return;
+    setCoins((prev) => {
+      const next = prev + Math.floor(amount);
+      coinsRef.current = next;
+      return next;
+    });
   }, []);
 
   const spendCoins = useCallback((amount: number) => {
-    let success = false;
-    setCoins((prev) => {
-      if (prev >= amount) {
-        success = true;
-        return prev - amount;
-      }
-      return prev;
-    });
-    return success;
+    if (!Number.isFinite(amount) || amount <= 0 || amount > coinsRef.current) return false;
+    coinsRef.current -= Math.floor(amount);
+    setCoins(coinsRef.current);
+    return true;
   }, []);
+
+  const grantReward = useCallback(async (activity: 'lesson' | 'quiz' | 'mission', rewardXp: number, rewardCoins: number) => {
+    const savedProfile = await saveReward(activity, rewardXp, rewardCoins);
+    setXp(Number(savedProfile.xp) || 0);
+    setCoins(Number(savedProfile.eco_coins) || 0);
+    coinsRef.current = Number(savedProfile.eco_coins) || 0;
+    const today = new Date().toISOString().slice(0, 10);
+    setStreak((current) => {
+      if (lastActivityDate === today) return current;
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return lastActivityDate === yesterday.toISOString().slice(0, 10) ? current + 1 : 1;
+    });
+    setLastActivityDate(today);
+  }, [lastActivityDate]);
 
   const completeLesson = useCallback((lessonId: string) => {
     setLessons((prev) =>
@@ -229,25 +253,58 @@ useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
     setUser(firebaseUser);
     if (!firebaseUser) {
+      setProfile(null);
+      setAssessmentResult(null);
+      setStateHydrated(false);
       setAuthLoading(false);
     }
 
     if (firebaseUser) {
+      const persisted = loadPersistedState(firebaseUser.uid);
+      setXp(0);
+      setCoins(0);
+      coinsRef.current = 0;
+      setStreak(persisted?.streak ?? 0);
+      setLastActivityDate(persisted?.lastActivityDate ?? null);
+      setGardenLevel(persisted?.gardenLevel ?? 3);
+      setLessons(persisted?.lessons ?? initialLessons);
+      setMissions(persisted?.missions ?? initialMissions);
+      setAssessmentResult(persisted?.assessmentResult ?? null);
+      setProfile(persisted?.profile?.uid === firebaseUser.uid ? persisted.profile : null);
+      setStateHydrated(true);
       let remoteProfile: UserProfile | null = null;
+      let profileLoadSucceeded = false;
       try {
         remoteProfile = await loadProfile(firebaseUser.uid);
-        if (remoteProfile) setProfile(remoteProfile);
+        profileLoadSucceeded = true;
+        if (remoteProfile) {
+          const loadedProfile = remoteProfile;
+          setProfile(loadedProfile);
+          setXp(Number(loadedProfile.xp) || 0);
+          setCoins(Number(loadedProfile.ecoCoins) || 0);
+          coinsRef.current = Number(loadedProfile.ecoCoins) || 0;
+          setAssessmentResult((current) => current ?? {
+            overallScore: loadedProfile.ecoScore,
+            topicScores: loadedProfile.topicScores,
+            strengths: loadedProfile.strengths,
+            weakTopics: loadedProfile.knowledgeGaps,
+            knowledgeLevel: loadedProfile.ecoLevel,
+            recommendedTopics: loadedProfile.recommendedTopics,
+            answers: {},
+            completedAt: loadedProfile.assessmentCompletedAt,
+          });
+        }
       } catch (error) {
-        console.error('Unable to load Supabase profile:', error);
+        console.error('Unable to load profile:', error instanceof Error ? error.message : 'unknown error');
       }
 
       setAuthLoading(false);
       setCurrentPage((currentPage) => {
       // Firebase restored a logged-in user after refresh
-      if (firebaseUser && currentPage === 'landing') {
+      if (firebaseUser && ['landing', 'login', 'signup'].includes(currentPage)) {
         const completedForUser =
           remoteProfile?.uid === firebaseUser.uid && remoteProfile.assessmentCompleted;
-        return completedForUser ? 'dashboard' : 'assessment';
+        return completedForUser || !profileLoadSucceeded ? 'dashboard' : 'assessment';
       }
 
       return currentPage;
@@ -283,13 +340,16 @@ useEffect(() => {
       assessmentCompleted,
       assessmentResult,
       profile,
+      streak,
+      lastActivityDate,
     };
+    if (!user || !stateHydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(`${STORAGE_KEY}:${user.uid}`, JSON.stringify(state));
     } catch {
       // ignore quota errors
     }
-  }, [xp, coins, gardenLevel, lessons, missions, assessmentCompleted, assessmentResult, profile]);
+  }, [user, stateHydrated, xp, coins, gardenLevel, lessons, missions, assessmentCompleted, assessmentResult, profile, streak, lastActivityDate]);
 
   const completeAssessment = useCallback(async (result: AssessmentResult) => {
     setAssessmentResult(result);
@@ -321,6 +381,9 @@ useEffect(() => {
   try {
     await signOut(auth);
     setUser(null);
+    setProfile(null);
+    setAssessmentResult(null);
+    setStateHydrated(false);
     navigate('landing');
   } catch (error) {
     console.error('Logout failed:', error);
@@ -344,6 +407,7 @@ useEffect(() => {
         xpForNextLevel,
         coins,
         streak,
+        impactScore,
         gardenLevel,
         gardenRank,
         lessons,
@@ -361,6 +425,7 @@ useEffect(() => {
         profile,
         hasCompletedAssessment,
         completeAssessment,
+        grantReward,
       }}
     >
       {children}

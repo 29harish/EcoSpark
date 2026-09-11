@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Card, GradientCard } from '@/components/ui/Card';
+import { useEffect, useState } from 'react';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { quizQuestions } from '@/data/mockData';
 import { useFeedback } from '@/components/ui/FeedbackToast';
-import { HelpCircle, Star, Clock, Zap, Coins, CheckCircle2, Play, Trophy, Brain } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
+import { HelpCircle, Clock, Zap, Coins, CheckCircle2, Play, Trophy, Brain } from 'lucide-react';
 
 export function Quizzes() {
   const [selectedQuiz, setSelectedQuiz] = useState<string | null>(null);
@@ -71,7 +72,8 @@ function QuizPlayer({ quiz, onExit }: { quiz: typeof quizQuestions[0]; onExit: (
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
   const [rewarded, setRewarded] = useState(false);
-  const { showXP, showCoin } = useFeedback();
+  const { showXP, showCoin, showInfo } = useFeedback();
+  const { grantReward } = useApp();
 
   const questions = [
     { q: 'What is the main greenhouse gas?', options: ['Oxygen', 'CO₂', 'Nitrogen', 'Helium'], correct: 1 },
@@ -81,16 +83,25 @@ function QuizPlayer({ quiz, onExit }: { quiz: typeof quizQuestions[0]; onExit: (
     { q: 'What does solar energy use?', options: ['Wind', 'Sunlight', 'Water', 'Coal'], correct: 1 },
   ];
 
+  useEffect(() => {
+    if (!finished || rewarded) return;
+    const percentage = Math.round((score / questions.length) * 100);
+    const xpEarned = Math.round(quiz.xpReward * (percentage / 100));
+    const coinsEarned = Math.round(xpEarned * 0.2);
+    void grantReward('quiz', xpEarned, coinsEarned).then(() => {
+      showXP(xpEarned);
+      showCoin(coinsEarned);
+      setRewarded(true);
+    }).catch((error: unknown) => {
+      showInfo(error instanceof Error ? error.message : 'Unable to save your quiz reward.');
+      setRewarded(false);
+    });
+  }, [finished, rewarded, score, quiz.xpReward, grantReward, showXP, showCoin, showInfo, questions.length]);
+
   if (finished) {
     const percentage = Math.round((score / questions.length) * 100);
     const xpEarned = Math.round(quiz.xpReward * (percentage / 100));
     const coinsEarned = Math.round(xpEarned * 0.2);
-
-    if (!rewarded) {
-      showXP(xpEarned);
-      showCoin(coinsEarned);
-      setRewarded(true);
-    }
 
     return (
       <Card className="p-8 md:p-12 text-center animate-pop-in">

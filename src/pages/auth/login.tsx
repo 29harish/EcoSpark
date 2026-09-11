@@ -12,7 +12,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export default function Login() {
-  const { navigate, hasCompletedAssessment } = useApp();
+  const { navigate } = useApp();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -30,13 +30,14 @@ const handleLogin = async (e: React.FormEvent) => {
   try {
     setError('');
 
-    const credentials = await signInWithEmailAndPassword(auth, email, password);
+    await signInWithEmailAndPassword(auth, email, password);
+    // AppContext routes after the authenticated profile has loaded.
+  } catch (error: unknown) {
+    const code = error && typeof error === 'object' && 'code' in error
+      ? String(error.code)
+      : '';
 
-    navigate(hasCompletedAssessment(credentials.user.uid) ? 'dashboard' : 'assessment');
-  } catch (error: any) {
-    console.error(error);
-
-    switch (error.code) {
+    switch (code) {
       case 'auth/invalid-credential':
         setError('Invalid email or password.');
         break;

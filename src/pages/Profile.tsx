@@ -1,6 +1,5 @@
 import { Card, GradientCard } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/context/AppContext';
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export function Profile() {
-  const { level, xp, xpInCurrentLevel, xpForNextLevel, coins, streak, gardenLevel, gardenRank, completedLessons, completedMissions, profile } = useApp();
+  const { level, xp, xpInCurrentLevel, xpForNextLevel, coins, streak, impactScore, gardenLevel, gardenRank, completedLessons, completedMissions, profile } = useApp();
 
   const xpProgress = (xpInCurrentLevel / xpForNextLevel) * 100;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -65,11 +64,16 @@ export function Profile() {
       </GradientCard>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <Card className="p-5 text-center animate-slide-up">
           <GraduationCap className="w-7 h-7 text-leaf-500 mx-auto mb-2" />
           <div className="text-2xl font-extrabold text-leaf-700">{completedLessons}</div>
           <div className="text-sm text-leaf-600/60 font-medium">Lessons Done</div>
+        </Card>
+        <Card className="p-5 text-center animate-slide-up">
+          <Zap className="w-7 h-7 text-coral-400 mx-auto mb-2" />
+          <div className="text-2xl font-extrabold text-leaf-700">{impactScore}</div>
+          <div className="text-sm text-leaf-600/60 font-medium">Impact Score</div>
         </Card>
         <Card className="p-5 text-center animate-slide-up">
           <Target className="w-7 h-7 text-coral-400 mx-auto mb-2" />

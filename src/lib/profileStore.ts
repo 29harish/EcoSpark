@@ -1,6 +1,6 @@
 import type { AssessmentResult } from '@/data/assessment';
 import type { UserProfile } from '@/context/AppContext';
-import { supabase } from '@/lib/supabase';
+import { apiRequest } from '@/lib/api';
 
 type ProfileRow = {
   firebase_uid: string;
@@ -12,9 +12,11 @@ type ProfileRow = {
   strengths: AssessmentResult['strengths'];
   knowledge_gaps: AssessmentResult['weakTopics'];
   assessment_completed: boolean;
+  updated_at?: string;
 };
 
 function toUserProfile(row: ProfileRow): UserProfile {
+  const knowledgeGaps = row.knowledge_gaps ?? [];
   return {
     uid: row.firebase_uid,
     email: row.email,
@@ -22,50 +24,45 @@ function toUserProfile(row: ProfileRow): UserProfile {
     ecoLevel: row.eco_level,
     ecoScore: Number(row.eco_score) || 0,
     topicScores: row.topic_scores,
-    strengths: row.strengths,
-    knowledgeGaps: row.knowledge_gaps,
-    recommendedTopics: row.knowledge_gaps,
+    strengths: row.strengths ?? [],
+    knowledgeGaps,
+    recommendedTopics: knowledgeGaps,
     assessmentCompleted: Boolean(row.assessment_completed),
-    assessmentCompletedAt: new Date().toISOString(),
+    assessmentCompletedAt: row.updated_at ?? new Date().toISOString(),
+    xp: Number((row as ProfileRow & { xp?: number }).xp) || 0,
+    ecoCoins: Number((row as ProfileRow & { eco_coins?: number }).eco_coins) || 0,
   };
 }
 
 export async function loadProfile(uid: string): Promise<UserProfile | null> {
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('firebase_uid', uid)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data ? toUserProfile(data as ProfileRow) : null;
+  void uid;
+  const response = await apiRequest('/api/profile');
+  return response.profile ? toUserProfile(response.profile as ProfileRow) : null;
 }
 
 export async function saveAssessmentProfile(
   profile: UserProfile,
   result: AssessmentResult,
 ) {
-  if (!supabase) return profile;
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .upsert({
-      firebase_uid: profile.uid,
-      email: profile.email,
+  const response = await apiRequest('/api/profile', {
+    method: 'PUT',
+    body: JSON.stringify({
       full_name: profile.displayName,
       eco_level: profile.ecoLevel,
       eco_score: profile.ecoScore,
       topic_scores: profile.topicScores,
       strengths: profile.strengths,
-      knowledge_gaps: profile.knowledgeGaps,
+      knowledge_gaps: result.recommendedTopics,
       assessment_completed: true,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'firebase_uid' })
-    .select('*')
-    .single();
+    }),
+  });
+  return toUserProfile(response.profile as ProfileRow);
+}
 
-  if (error) throw error;
-  return toUserProfile(data as ProfileRow);
+export async function saveReward(activity: 'lesson' | 'quiz' | 'mission', xp: number, coins: number) {
+  const response = await apiRequest('/api/profile/reward', {
+    method: 'POST',
+    body: JSON.stringify({ activity, xp, coins }),
+  });
+  return response.profile;
 }

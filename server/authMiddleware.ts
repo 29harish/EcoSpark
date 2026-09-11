@@ -34,7 +34,10 @@ export async function requireAuth(
 
     next();
   } catch (error) {
-    console.error('Auth verification failed:', error);
+    console.error(
+      'Auth verification failed:',
+      error instanceof Error ? error.message : 'unknown error'
+    );
 
     return res.status(401).json({
       success: false,

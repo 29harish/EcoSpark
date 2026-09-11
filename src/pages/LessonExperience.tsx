@@ -11,19 +11,16 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
-  Sparkles,
-  Trophy,
   Coins,
   Zap,
   RotateCcw,
   Lightbulb,
-  PartyPopper,
   Sprout,
 } from 'lucide-react';
 
 export function LessonExperience() {
-  const { activeLessonId, lessons, closeLesson, completeLesson, addXP, addCoins, navigate } = useApp();
-  const { showXP, showCoin } = useFeedback();
+  const { activeLessonId, lessons, closeLesson, completeLesson, grantReward, navigate } = useApp();
+  const { showXP, showCoin, showInfo } = useFeedback();
   const lesson = lessons.find(l => l.id === activeLessonId);
 
   const [phase, setPhase] = useState<'intro' | 'slides' | 'quiz' | 'results'>('intro');
@@ -71,7 +68,7 @@ export function LessonExperience() {
     }
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
     if (quizIndex < lesson.quiz.length - 1) {
       setQuizIndex(quizIndex + 1);
       setSelectedAnswer(null);
@@ -83,12 +80,16 @@ export function LessonExperience() {
       const coinsEarned = Math.round(lesson.xpReward * 0.2 * (0.5 + accuracy * 0.5));
       setEarnedXP(xpEarned);
       if (!rewarded) {
-        addXP(xpEarned);
-        addCoins(coinsEarned);
-        showXP(xpEarned);
-        showCoin(coinsEarned);
-        completeLesson(lesson.id);
-        setRewarded(true);
+        try {
+          await grantReward('lesson', xpEarned, coinsEarned);
+          showXP(xpEarned);
+          showCoin(coinsEarned);
+          completeLesson(lesson.id);
+          setRewarded(true);
+        } catch (error) {
+          showInfo(error instanceof Error ? error.message : 'Unable to save your lesson reward.');
+          return;
+        }
       }
       setPhase('results');
     }

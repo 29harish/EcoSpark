@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { aiGuideSuggestions } from '@/data/mockData';
+import { apiRequest } from '@/lib/api';
 import {
   Bot,
   Send,
@@ -114,27 +115,10 @@ export function AIEcoGuide() {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/ai/chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: userMessage,
-            history,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.error || 'Failed to get AI response'
-        );
-      }
+      const data = await apiRequest('/api/ai/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: userMessage, history }),
+      });
 
       setMessages((prev) => [
         ...prev,

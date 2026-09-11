@@ -19,12 +19,11 @@ export function Missions() {
     missions,
     completeMission,
     updateMissionProgress,
-    addXP,
-    addCoins,
+    grantReward,
     completedMissions,
   } = useApp();
 
-  const { showXP, showCoin } = useFeedback();
+  const { showXP, showCoin, showInfo } = useFeedback();
 
   const [showCelebration, setShowCelebration] = useState<string | null>(null);
   const [completingMission, setCompletingMission] = useState<string | null>(null);
@@ -42,9 +41,7 @@ export function Missions() {
       // Mark mission as completed
       completeMission(missionId);
 
-      // Save XP first, then coins
-      await addXP(mission.xpReward);
-      await addCoins(mission.coinReward);
+      await grantReward('mission', mission.xpReward, mission.coinReward);
 
       // Show reward notifications
       showXP(mission.xpReward);
@@ -57,7 +54,7 @@ export function Missions() {
         setShowCelebration(null);
       }, 2000);
     } catch (error) {
-      console.error('Mission completion error:', error);
+      showInfo(error instanceof Error ? error.message : 'Unable to save your mission reward.');
     } finally {
       setCompletingMission(null);
     }

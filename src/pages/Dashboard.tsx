@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   Sparkles,
   Play,
-  BookOpen,
   Leaf,
   Star,
   ChevronRight,
@@ -44,13 +43,17 @@ export function Dashboard() {
     streak,
     gardenLevel,
     gardenRank,
+    impactScore,
     lessons,
     missions: userMissions,
     openLesson,
     navigate,
   } = useApp();
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<{
+    full_name?: string | null;
+    eco_level?: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
 
@@ -99,8 +102,7 @@ export function Dashboard() {
     user?.displayName ||
     'Eco Learner';
 
-  const displayScore =
-    profile?.eco_score ?? 0;
+  const displayScore = impactScore;
 
   const displayLevel =
     profile?.eco_level || level;
@@ -1045,4 +1047,3 @@ export function Dashboard() {
     </div>
   );
 }
-

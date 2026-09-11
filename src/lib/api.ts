@@ -1,6 +1,6 @@
 import { auth } from '@/lib/firebase';
 
-const API_URL = (
+export const API_URL = (
   import.meta.env.VITE_API_URL || 'http://localhost:5000'
 ).replace(/\/$/, '');
 
@@ -15,7 +15,6 @@ export async function apiRequest(
   }
 
   const token = await user.getIdToken();
-
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
@@ -26,10 +25,8 @@ export async function apiRequest(
   });
 
   const data = await response.json().catch(() => ({}));
-
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed.');
+    throw new Error(data.error || `Request failed (${response.status}) at ${path}.`);
   }
-
   return data;
 }
