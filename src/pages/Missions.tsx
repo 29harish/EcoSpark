@@ -6,6 +6,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/context/AppContext';
 import { useFeedback } from '@/components/ui/FeedbackToast';
+import { PlantTreeMission } from '@/components/PlantTreeMission';
 import {
   CheckCircle2,
   Circle,
@@ -128,23 +129,47 @@ export function Missions() {
               </div>
             )}
 
-            <div className="mt-5 flex gap-2">
-              {mission.progress === 0 && (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => handleProgress(mission.id, 50)}>
-                    Mark 50% Done
-                  </Button>
-                  <Button size="sm" onClick={() => handleComplete(mission.id)} icon={<CheckCircle2 className="w-4 h-4" />}>
-                    Complete
-                  </Button>
-                </>
-              )}
-              {mission.progress > 0 && mission.progress < 100 && (
-                <Button size="sm" fullWidth onClick={() => handleComplete(mission.id)} icon={<CheckCircle2 className="w-4 h-4" />}>
-                  Mark Complete
-                </Button>
-              )}
-            </div>
+            {mission.id === 'm4' ? (
+  <PlantTreeMission
+    xpReward={mission.xpReward}
+    coinReward={mission.coinReward}
+  />
+) : (
+  <div className="mt-5 flex gap-2">
+
+    {mission.progress === 0 && (
+      <>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleProgress(mission.id, 50)}
+        >
+          Mark 50% Done
+        </Button>
+
+        <Button
+          size="sm"
+          onClick={() => handleComplete(mission.id)}
+          icon={<CheckCircle2 className="w-4 h-4" />}
+        >
+          Complete
+        </Button>
+      </>
+    )}
+
+    {mission.progress > 0 && mission.progress < 100 && (
+      <Button
+        size="sm"
+        fullWidth
+        onClick={() => handleComplete(mission.id)}
+        icon={<CheckCircle2 className="w-4 h-4" />}
+      >
+        Mark Complete
+      </Button>
+    )}
+
+  </div>
+)}
           </Card>
         ))}
       </div>
