@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import {
   LayoutDashboard,
   GraduationCap,
-  HelpCircle,
   Target,
   Sprout,
   Trophy,
@@ -17,6 +15,7 @@ import {
   Coins,
   LogOut,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useApp, type PageId } from '@/context/AppContext';
 
 interface NavItem {
@@ -26,26 +25,80 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { id: 'learn', label: 'Learn', icon: <GraduationCap className="w-5 h-5" /> },
-  { id: 'quizzes', label: 'Quizzes', icon: <HelpCircle className="w-5 h-5" /> },
-  { id: 'missions', label: 'Missions', icon: <Target className="w-5 h-5" /> },
-  { id: 'garden', label: 'Eco Garden', icon: <Sprout className="w-5 h-5" /> },
-  { id: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="w-5 h-5" /> },
-  { id: 'challenges', label: 'Challenges', icon: <Swords className="w-5 h-5" /> },
-  { id: 'ai-guide', label: 'AI Eco Guide', icon: <Bot className="w-5 h-5" /> },
-  { id: 'rewards', label: 'Rewards', icon: <Gift className="w-5 h-5" /> },
-  { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: <LayoutDashboard className="w-5 h-5" />,
+  },
+  {
+    id: 'learn',
+    label: 'Learn',
+    icon: <GraduationCap className="w-5 h-5" />,
+  },
+  {
+    id: 'missions',
+    label: 'Missions',
+    icon: <Target className="w-5 h-5" />,
+  },
+  {
+    id: 'garden',
+    label: 'Eco Garden',
+    icon: <Sprout className="w-5 h-5" />,
+  },
+  {
+    id: 'leaderboard',
+    label: 'Leaderboard',
+    icon: <Trophy className="w-5 h-5" />,
+  },
+  {
+    id: 'challenges',
+    label: 'Challenges',
+    icon: <Swords className="w-5 h-5" />,
+  },
+  {
+    id: 'ai-guide',
+    label: 'AI Eco Guide',
+    icon: <Bot className="w-5 h-5" />,
+  },
+  {
+    id: 'rewards',
+    label: 'Rewards',
+    icon: <Gift className="w-5 h-5" />,
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: <User className="w-5 h-5" />,
+  },
 ];
 
 export function Sidebar() {
-  const { currentPage, navigate, level, xp, coins, streak, logout } = useApp();
+  const {
+    currentPage,
+    navigate,
+    level,
+    xp,
+    coins,
+    streak,
+    logout,
+    user,
+  } = useApp();
+
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleNavigate = (page: PageId) => {
     navigate(page);
     setMobileOpen(false);
   };
+
+  // Get the logged-in user's name
+  const userName =
+    user?.displayName?.trim() ||
+    user?.email?.split('@')[0] ||
+    'Student';
+
+  // Get first letter for avatar
+  const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <>
@@ -58,22 +111,36 @@ export function Sidebar() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-leaf-400 to-lagoon-500 flex items-center justify-center">
             <Leaf className="w-5 h-5 text-white" />
           </div>
-          <span className="text-lg font-extrabold gradient-text">EcoSpark</span>
+
+          <span className="text-lg font-extrabold gradient-text">
+            EcoSpark
+          </span>
         </button>
+
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 bg-sun-50 px-3 py-1.5 rounded-full">
             <Coins className="w-4 h-4 text-sun-500" />
-            <span className="text-sm font-bold text-sun-700">{coins}</span>
+            <span className="text-sm font-bold text-sun-700">
+              {coins}
+            </span>
           </div>
+
           <div className="flex items-center gap-1.5 bg-coral-50 px-3 py-1.5 rounded-full">
             <Flame className="w-4 h-4 text-coral-500" />
-            <span className="text-sm font-bold text-coral-700">{streak}</span>
+            <span className="text-sm font-bold text-coral-700">
+              {streak}
+            </span>
           </div>
+
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="w-10 h-10 rounded-xl bg-leaf-50 flex items-center justify-center text-leaf-700"
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
@@ -89,7 +156,9 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={`fixed left-0 top-0 bottom-0 w-72 z-50 transition-transform duration-300 ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          mobileOpen
+            ? 'translate-x-0'
+            : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="h-full glass border-r border-leaf-100/50 flex flex-col">
@@ -101,31 +170,50 @@ export function Sidebar() {
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-leaf-400 to-lagoon-500 flex items-center justify-center shadow-glow">
               <Leaf className="w-6 h-6 text-white" />
             </div>
+
             <div className="text-left">
-              <div className="text-xl font-extrabold gradient-text">EcoSpark</div>
-              <div className="text-xs text-leaf-600/60 font-medium">Learn · Act · Grow</div>
+              <div className="text-xl font-extrabold gradient-text">
+                EcoSpark
+              </div>
+
+              <div className="text-xs text-leaf-600/60 font-medium">
+                Learn · Act · Grow
+              </div>
             </div>
           </button>
 
           {/* User mini-profile */}
           <div className="mx-4 mb-4 p-4 bg-gradient-to-br from-leaf-500 to-lagoon-500 rounded-2xl text-white shadow-soft">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl">
-                🐼
+              {/* EcoSpark Avatar */}
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-inner">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Sprout className="w-6 h-6 text-white" />
+                </div>
               </div>
-              <div>
-                <div className="font-bold text-sm">Hey, Student!</div>
-                <div className="text-xs text-white/80">Level {level} · {xp.toLocaleString()} XP</div>
+
+              <div className="min-w-0">
+                <div className="font-bold text-sm truncate">
+                  Hey, {userName}!
+                </div>
+
+                <div className="text-xs text-white/80">
+                  Level {level} · {xp.toLocaleString()} XP
+                </div>
               </div>
             </div>
+
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-1 bg-white/20 rounded-full px-2.5 py-1">
                 <Coins className="w-3.5 h-3.5" />
                 <span className="font-bold">{coins}</span>
               </div>
+
               <div className="flex items-center gap-1 bg-white/20 rounded-full px-2.5 py-1">
                 <Flame className="w-3.5 h-3.5" />
-                <span className="font-bold">{streak} day</span>
+                <span className="font-bold">
+                  {streak} day
+                </span>
               </div>
             </div>
           </div>
@@ -133,7 +221,10 @@ export function Sidebar() {
           {/* Nav items */}
           <nav className="flex-1 overflow-y-auto px-4 space-y-1 scrollbar-hide">
             {navItems.map((item) => {
-              const isActive = currentPage === item.id || (currentPage === 'lesson' && item.id === 'learn');
+              const isActive =
+                currentPage === item.id ||
+                (currentPage === 'lesson' && item.id === 'learn');
+
               return (
                 <button
                   key={item.id}
@@ -144,14 +235,22 @@ export function Sidebar() {
                       : 'text-leaf-700 hover:bg-leaf-50'
                   }`}
                 >
-                  <span className={isActive ? 'text-white' : 'text-leaf-500'}>{item.icon}</span>
+                  <span
+                    className={
+                      isActive ? 'text-white' : 'text-leaf-500'
+                    }
+                  >
+                    {item.icon}
+                  </span>
+
                   {item.label}
                 </button>
               );
             })}
           </nav>
-          
-            {/* Logout */}
+
+          {/* Logout */}
+          <div className="px-4 pb-4">
             <button
               onClick={logout}
               className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-200"
@@ -159,8 +258,7 @@ export function Sidebar() {
               <LogOut className="w-5 h-5" />
               Logout
             </button>
-
-
+          </div>
         </div>
       </aside>
     </>

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 
 import { Card, GradientCard } from '@/components/ui/Card';
@@ -14,7 +13,6 @@ import {
   Zap,
   Target,
   Sprout,
-  Trophy,
   ArrowRight,
   CheckCircle2,
   Sparkles,
@@ -26,10 +24,8 @@ import {
 } from 'lucide-react';
 
 import {
-  leaderboardSchool,
   gardenRanks,
 } from '@/data/mockData';
-
 
 export function Dashboard() {
   const {
@@ -54,8 +50,8 @@ export function Dashboard() {
     full_name?: string | null;
     eco_level?: string | null;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
 
+  const [loading, setLoading] = useState(true);
 
   // =====================================
   // INITIAL LOAD
@@ -69,7 +65,6 @@ export function Dashboard() {
     return () => clearTimeout(timer);
   }, []);
 
-
   // =====================================
   // LOAD PROFILE
   // =====================================
@@ -82,16 +77,12 @@ export function Dashboard() {
         const data = await apiRequest('/api/profile');
         setProfile(data.profile);
       } catch (error) {
-        console.error(
-          'Unable to load profile:',
-          error
-        );
+        console.error('Unable to load profile:', error);
       }
     };
 
     loadProfile();
   }, [authLoading, user]);
-
 
   // =====================================
   // DISPLAY DATA
@@ -111,53 +102,31 @@ export function Dashboard() {
     xpForNextLevel > 0
       ? Math.min(
           100,
-          (xpInCurrentLevel /
-            xpForNextLevel) *
-            100
+          (xpInCurrentLevel / xpForNextLevel) * 100
         )
       : 0;
 
   const currentRank =
     gardenRanks.find(
-      (rank) =>
-        rank.name === gardenRank
+      (rank) => rank.name === gardenRank
     ) || gardenRanks[0];
 
   const nextRank =
     gardenRanks.find(
-      (rank) =>
-        rank.minLevel > level
+      (rank) => rank.minLevel > level
     ) ||
-    gardenRanks[
-      gardenRanks.length - 1
-    ];
+    gardenRanks[gardenRanks.length - 1];
 
-  const continueLessons =
-    lessons
-      .filter(
-        (lesson) =>
-          !lesson.completed
-      )
-      .slice(0, 3);
+  const continueLessons = lessons
+    .filter((lesson) => !lesson.completed)
+    .slice(0, 3);
 
   const featuredMission =
     userMissions.find(
-      (mission) =>
-        !mission.completed
-    ) ||
-    userMissions[0];
+      (mission) => !mission.completed
+    ) || userMissions[0];
 
-  const myRank =
-    leaderboardSchool.find(
-      (entry) =>
-        entry.isCurrentUser
-    );
-
-  const topStudents =
-    leaderboardSchool.slice(0, 4);
-
-  const hour =
-    new Date().getHours();
+  const hour = new Date().getHours();
 
   const greeting =
     hour < 12
@@ -165,7 +134,6 @@ export function Dashboard() {
       : hour < 18
       ? 'Good afternoon'
       : 'Good evening';
-
 
   // =====================================
   // LOADING
@@ -179,18 +147,14 @@ export function Dashboard() {
           <CardSkeleton />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {Array.from({
-            length: 4,
-          }).map((_, index) => (
-            <CardSkeleton
-              key={index}
-            />
+        <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <CardSkeleton key={index} />
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid lg:grid-cols-[1.65fr_1fr] gap-6">
+          <div>
             <CardSkeleton />
           </div>
 
@@ -201,14 +165,12 @@ export function Dashboard() {
     );
   }
 
-
   // =====================================
   // DASHBOARD
   // =====================================
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 pb-10">
-
 
       {/* =================================
           WELCOME
@@ -234,7 +196,6 @@ export function Dashboard() {
             </p>
 
           </div>
-
 
           <div className="flex items-center gap-3">
 
@@ -274,8 +235,6 @@ export function Dashboard() {
         className="relative overflow-hidden p-6 md:p-7 mb-6"
       >
 
-        {/* Decorative background */}
-
         <div className="absolute -right-16 -top-20 w-56 h-56 rounded-full bg-white/10" />
 
         <div className="absolute right-20 -bottom-28 w-64 h-64 rounded-full bg-white/5" />
@@ -304,16 +263,12 @@ export function Dashboard() {
 
               <button
                 onClick={() => {
-                  const lesson =
-                    lessons.find(
-                      (item) =>
-                        !item.completed
-                    );
+                  const lesson = lessons.find(
+                    (item) => !item.completed
+                  );
 
                   if (lesson) {
-                    openLesson(
-                      lesson.id
-                    );
+                    openLesson(lesson.id);
                   } else {
                     navigate('learn');
                   }
@@ -325,9 +280,7 @@ export function Dashboard() {
               </button>
 
               <button
-                onClick={() =>
-                  navigate('missions')
-                }
+                onClick={() => navigate('missions')}
                 className="px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-sm font-bold hover:bg-white/20 transition-all"
               >
                 Explore mission
@@ -440,17 +393,11 @@ export function Dashboard() {
 
           <div className="flex gap-1 mt-3">
 
-            {Array.from({
-              length: 7,
-            }).map((_, index) => (
+            {Array.from({ length: 7 }).map((_, index) => (
               <div
                 key={index}
                 className={`h-1.5 flex-1 rounded-full ${
-                  index <
-                  Math.min(
-                    streak,
-                    7
-                  )
+                  index < Math.min(streak, 7)
                     ? 'bg-coral-400'
                     : 'bg-coral-100'
                 }`}
@@ -504,7 +451,6 @@ export function Dashboard() {
 
       <div className="grid lg:grid-cols-[1.65fr_1fr] gap-6">
 
-
         {/* =================================
             LEFT
         ================================= */}
@@ -512,125 +458,145 @@ export function Dashboard() {
         <div className="space-y-6">
 
 
-          {/* CONTINUE LEARNING */}
+          {/* =================================
+              CONTINUE LEARNING
+          ================================= */}
 
           <section>
 
-            <div className="flex items-end justify-between mb-3">
+            <div className="flex items-end justify-between mb-4">
 
               <div>
 
                 <h2 className="text-lg font-black text-leaf-800">
-                  Pick up where you left off
+                  Continue learning
                 </h2>
 
                 <p className="text-xs text-leaf-600/50 mt-1">
-                  Keep your learning streak alive
+                  Choose a lesson and keep going
                 </p>
 
               </div>
 
               <button
-                onClick={() =>
-                  navigate('learn')
-                }
-                className="text-xs font-bold text-leaf-600 hover:text-leaf-700"
+                onClick={() => navigate('learn')}
+                className="text-xs font-bold text-leaf-600 hover:text-leaf-700 flex items-center gap-1"
               >
-                See all
+                View all
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
 
             </div>
 
 
-            <div className="grid md:grid-cols-3 gap-3">
+            {continueLessons.length > 0 ? (
 
-              {continueLessons.length > 0 ? (
+              <div className="space-y-2.5">
 
-                continueLessons.map(
-                  (lesson) => (
+                {continueLessons.map((lesson) => (
 
-                    <button
-                      key={lesson.id}
-                      onClick={() =>
-                        openLesson(
-                          lesson.id
-                        )
-                      }
-                      className="text-left group"
+                  <button
+                    key={lesson.id}
+                    onClick={() => openLesson(lesson.id)}
+                    className="w-full text-left group"
+                  >
+
+                    <Card
+                      className="p-3.5 md:p-4"
+                      hover
                     >
 
-                      <Card
-                        className="p-0 overflow-hidden h-full"
-                        hover
-                      >
+                      <div className="flex items-center gap-3.5">
+
+                        {/* LESSON ICON */}
 
                         <div
-                          className={`h-24 bg-gradient-to-br ${lesson.color} flex items-center justify-center text-4xl`}
+                          className={`w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br ${lesson.color} flex items-center justify-center text-2xl md:text-3xl flex-shrink-0`}
                         >
                           {lesson.emoji}
                         </div>
 
-                        <div className="p-4">
 
-                          <div className="text-sm font-extrabold text-leaf-800 line-clamp-2 min-h-[40px]">
+                        {/* LESSON DETAILS */}
+
+                        <div className="flex-1 min-w-0">
+
+                          <h3 className="text-sm md:text-base font-extrabold text-leaf-800 truncate">
                             {lesson.title}
-                          </div>
+                          </h3>
 
-                          <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2 mt-1.5">
 
-                            <span className="text-[10px] font-semibold text-leaf-600/50">
+                            <span className="text-[11px] text-leaf-600/50">
                               {lesson.duration} min
                             </span>
 
-                            <span className="text-[10px] font-extrabold text-sun-600">
+                            <span className="text-leaf-600/30">
+                              •
+                            </span>
+
+                            <span className="text-[11px] font-bold text-sun-600">
                               +{lesson.xpReward} XP
                             </span>
 
                           </div>
 
-                          <div className="flex items-center justify-end mt-3 text-leaf-500">
+                        </div>
 
-                            <span className="text-[11px] font-bold group-hover:mr-1 transition-all">
-                              Start
-                            </span>
 
-                            <ChevronRight className="w-3.5 h-3.5" />
+                        {/* CONTINUE */}
 
-                          </div>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-leaf-600 group-hover:text-leaf-700 flex-shrink-0">
+
+                          <span className="hidden sm:block">
+                            Continue
+                          </span>
+
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
 
                         </div>
 
-                      </Card>
+                      </div>
 
-                    </button>
+                    </Card>
 
-                  )
-                )
+                  </button>
 
-              ) : (
+                ))}
 
-                <Card className="md:col-span-3 p-8 text-center">
+              </div>
 
-                  <CheckCircle2 className="w-8 h-8 text-leaf-500 mx-auto" />
+            ) : (
 
-                  <div className="font-bold text-leaf-800 mt-3">
-                    You're all caught up! 🎉
-                  </div>
+              <Card className="p-8 text-center">
 
-                  <p className="text-xs text-leaf-600/50 mt-1">
-                    Explore more lessons when you're ready.
-                  </p>
+                <CheckCircle2 className="w-8 h-8 text-leaf-500 mx-auto" />
 
-                </Card>
+                <div className="font-bold text-leaf-800 mt-3">
+                  You're all caught up! 🎉
+                </div>
 
-              )}
+                <p className="text-xs text-leaf-600/50 mt-1">
+                  Explore more lessons when you're ready.
+                </p>
 
-            </div>
+                <button
+                  onClick={() => navigate('learn')}
+                  className="mt-4 px-4 py-2 rounded-lg bg-leaf-50 text-leaf-700 text-xs font-bold hover:bg-leaf-100"
+                >
+                  Explore lessons
+                </button>
+
+              </Card>
+
+            )}
 
           </section>
 
 
-          {/* FEATURED MISSION */}
+          {/* =================================
+              FEATURED MISSION
+          ================================= */}
 
           <section>
 
@@ -650,9 +616,7 @@ export function Dashboard() {
             {featuredMission ? (
 
               <button
-                onClick={() =>
-                  navigate('missions')
-                }
+                onClick={() => navigate('missions')}
                 className="w-full text-left group"
               >
 
@@ -669,7 +633,6 @@ export function Dashboard() {
                       {featuredMission.emoji}
                     </div>
 
-
                     <div className="flex-1 min-w-0">
 
                       <div className="flex items-center gap-2 mb-1">
@@ -682,11 +645,9 @@ export function Dashboard() {
                         </Badge>
 
                         {!featuredMission.completed &&
-                          featuredMission.progress >
-                            0 && (
+                          featuredMission.progress > 0 && (
                             <span className="text-[10px] font-semibold text-leaf-600/50">
-                              {featuredMission.progress}%
-                              complete
+                              {featuredMission.progress}% complete
                             </span>
                           )}
 
@@ -714,7 +675,6 @@ export function Dashboard() {
 
                     </div>
 
-
                     <div className="w-10 h-10 rounded-full bg-leaf-50 flex items-center justify-center text-leaf-500 group-hover:bg-leaf-500 group-hover:text-white transition-all flex-shrink-0">
 
                       <ArrowRight className="w-4 h-4" />
@@ -725,22 +685,19 @@ export function Dashboard() {
 
 
                   {featuredMission.progress > 0 &&
-                    featuredMission.progress <
-                      100 && (
+                    featuredMission.progress < 100 && (
 
-                      <div className="mt-5">
+                    <div className="mt-5">
 
-                        <ProgressBar
-                          value={
-                            featuredMission.progress
-                          }
-                          gradient="from-leaf-400 to-lagoon-400"
-                          height="h-1.5"
-                        />
+                      <ProgressBar
+                        value={featuredMission.progress}
+                        gradient="from-leaf-400 to-lagoon-400"
+                        height="h-1.5"
+                      />
 
-                      </div>
+                    </div>
 
-                    )}
+                  )}
 
                 </Card>
 
@@ -749,10 +706,13 @@ export function Dashboard() {
             ) : (
 
               <Card className="p-6 text-center">
+
                 <Target className="w-7 h-7 text-leaf-400 mx-auto" />
+
                 <p className="text-sm font-bold text-leaf-800 mt-2">
                   No missions available right now.
                 </p>
+
               </Card>
 
             )}
@@ -769,7 +729,9 @@ export function Dashboard() {
         <div className="space-y-6">
 
 
-          {/* ECO GARDEN */}
+          {/* =================================
+              ECO GARDEN
+          ================================= */}
 
           <Card className="overflow-hidden p-0">
 
@@ -867,9 +829,7 @@ export function Dashboard() {
 
 
               <button
-                onClick={() =>
-                  navigate('garden')
-                }
+                onClick={() => navigate('garden')}
                 className="w-full mt-4 py-2.5 rounded-xl bg-leaf-50 text-leaf-700 text-xs font-extrabold hover:bg-leaf-100 transition-colors"
               >
                 Grow your garden
@@ -880,127 +840,18 @@ export function Dashboard() {
           </Card>
 
 
-          {/* SCHOOL RANK */}
-
-          <Card className="p-5">
-
-            <div className="flex items-center justify-between mb-4">
-
-              <div className="flex items-center gap-2">
-
-                <div className="w-9 h-9 rounded-xl bg-sun-50 flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-sun-500" />
-                </div>
-
-                <div>
-
-                  <h3 className="font-black text-leaf-800">
-                    School leaderboard
-                  </h3>
-
-                  <p className="text-[10px] text-leaf-600/50">
-                    Keep climbing
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="text-right">
-
-                <div className="text-lg font-black text-leaf-700">
-                  #{myRank?.rank || 3}
-                </div>
-
-                <div className="text-[9px] text-leaf-600/40 font-semibold">
-                  Your rank
-                </div>
-
-              </div>
-
-            </div>
-
-
-            <div className="space-y-1">
-
-              {topStudents.map(
-                (entry) => (
-
-                  <div
-                    key={entry.id}
-                    className={`flex items-center gap-2.5 p-2 rounded-xl ${
-                      entry.isCurrentUser
-                        ? 'bg-leaf-50'
-                        : ''
-                    }`}
-                  >
-
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${
-                        entry.rank === 1
-                          ? 'bg-sun-400 text-white'
-                          : entry.rank === 2
-                          ? 'bg-gray-300 text-white'
-                          : entry.rank === 3
-                          ? 'bg-coral-300 text-white'
-                          : 'bg-leaf-100 text-leaf-600'
-                      }`}
-                    >
-                      {entry.rank}
-                    </div>
-
-
-                    <div className="w-8 h-8 rounded-lg bg-leaf-50 flex items-center justify-center text-sm">
-                      {entry.avatar}
-                    </div>
-
-
-                    <div className="flex-1 min-w-0">
-
-                      <div className="text-xs font-bold text-leaf-800 truncate">
-                        {entry.name}
-                      </div>
-
-                      <div className="text-[9px] text-leaf-600/40">
-                        Level {entry.level}
-                      </div>
-
-                    </div>
-
-
-                    <div className="text-[10px] font-black text-leaf-600">
-                      {entry.xp.toLocaleString()}
-                    </div>
-
-                  </div>
-
-                )
-              )}
-
-            </div>
-
-
-            <button
-              onClick={() =>
-                navigate('leaderboard')
-              }
-              className="w-full mt-3 pt-3 border-t border-leaf-100 text-xs font-bold text-leaf-600 flex items-center justify-center gap-1 hover:text-leaf-700"
-            >
-              See leaderboard
-              <ArrowRight className="w-3 h-3" />
-            </button>
-
-          </Card>
-
-
-          {/* SMALL MOTIVATION */}
+          {/* =================================
+              SMALL MOTIVATION
+          ================================= */}
 
           <div className="rounded-2xl bg-cream-50 border border-leaf-100/50 p-5">
 
             <div className="flex items-start gap-3">
 
               <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center flex-shrink-0">
+
                 <Star className="w-4 h-4 text-sun-500" />
+
               </div>
 
               <div>
@@ -1033,9 +884,7 @@ export function Dashboard() {
       <div className="mt-6 flex items-center justify-center">
 
         <button
-          onClick={() =>
-            navigate('assessment')
-          }
+          onClick={() => navigate('assessment')}
           className="text-xs font-bold text-leaf-500 hover:text-leaf-700 flex items-center gap-1.5 transition-colors"
         >
           <Leaf className="w-3.5 h-3.5" />
