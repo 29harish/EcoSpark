@@ -15,12 +15,22 @@ import {
   Flame,
   Sparkles,
   PartyPopper,
+  Camera,
+  MapPin,
+  Calendar,
+  Upload,
 } from 'lucide-react';
 
 export function Missions() {
   const { missions, completeMission, updateMissionProgress, addXP, addCoins, completedMissions } = useApp();
   const { showXP, showCoin } = useFeedback();
   const [showCelebration, setShowCelebration] = useState<string | null>(null);
+  const [showPlantForm, setShowPlantForm] = useState(false);
+const [treeName, setTreeName] = useState('');
+const [plantLocation, setPlantLocation] = useState('');
+const [plantDate, setPlantDate] = useState('');
+const [photoName, setPhotoName] = useState('');
+const [proofSubmitted, setProofSubmitted] = useState(false);
 
   const handleComplete = (missionId: string) => {
     const mission = missions.find(m => m.id === missionId);
