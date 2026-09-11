@@ -84,7 +84,7 @@ export function LessonExperience() {
           await grantReward('lesson', xpEarned, coinsEarned);
           showXP(xpEarned);
           showCoin(coinsEarned);
-          completeLesson(lesson.id);
+          await completeLesson(lesson.id);
           setRewarded(true);
         } catch (error) {
           showInfo(error instanceof Error ? error.message : 'Unable to save your lesson reward.');

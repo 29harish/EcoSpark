@@ -2,6 +2,25 @@ import type { AssessmentResult } from '@/data/assessment';
 import type { UserProfile } from '@/context/AppContext';
 import { apiRequest } from '@/lib/api';
 
+export interface MissionSubmission {
+  id: string;
+  missionId: string;
+  proofName: string;
+  proofData?: string;
+  note: string;
+  status: 'pending' | 'verified' | 'rejected';
+  submittedAt: string;
+  verifiedAt?: string;
+}
+
+export interface ProgressSnapshot {
+  lessons: Array<{ id: string; completed: boolean }>;
+  missions: Array<{ id: string; progress: number; completed: boolean }>;
+  streak: number;
+  lastActivityDate: string | null;
+  impactScore: number;
+}
+
 type ProfileRow = {
   firebase_uid: string;
   email: string | null;
@@ -65,4 +84,38 @@ export async function saveReward(activity: 'lesson' | 'quiz' | 'mission', xp: nu
     body: JSON.stringify({ activity, xp, coins }),
   });
   return response.profile;
+}
+
+export async function loadMissionSubmissions(): Promise<MissionSubmission[]> {
+  const response = await apiRequest('/api/missions/submissions');
+  return (response.submissions ?? []) as MissionSubmission[];
+}
+
+export async function submitMissionProof(input: {
+  missionId: string;
+  proofName: string;
+  proofData: string;
+  note: string;
+}): Promise<MissionSubmission> {
+  const response = await apiRequest('/api/missions/submissions', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  return response.submission as MissionSubmission;
+}
+
+export async function loadProgress(): Promise<ProgressSnapshot> {
+  const response = await apiRequest('/api/progress');
+  return response.progress as ProgressSnapshot;
+}
+
+export async function saveProgress(progress: {
+  lessons: Array<{ id: string; completed: boolean }>;
+  missions: Array<{ id: string; progress: number; completed: boolean }>;
+}): Promise<ProgressSnapshot> {
+  const response = await apiRequest('/api/progress', {
+    method: 'PUT',
+    body: JSON.stringify(progress),
+  });
+  return response.progress as ProgressSnapshot;
 }

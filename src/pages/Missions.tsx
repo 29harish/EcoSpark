@@ -1,360 +1,98 @@
-import { useState } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Clock3, Coins, FileImage, Send, Target, Upload, X } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
-import { ProgressBar } from '@/components/ui/ProgressBar';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import { useApp } from '@/context/AppContext';
 import { useFeedback } from '@/components/ui/FeedbackToast';
-import {
-  CheckCircle2,
-  Zap,
-  Coins,
-  Target,
-  PartyPopper,
-} from 'lucide-react';
+import { loadMissionSubmissions, submitMissionProof, type MissionSubmission } from '@/lib/profileStore';
 
 export function Missions() {
-  const {
-    missions,
-    completeMission,
-    updateMissionProgress,
-    grantReward,
-    completedMissions,
-  } = useApp();
+  const { missions, completedMissions, user } = useApp();
+  const { showInfo } = useFeedback();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [submissions, setSubmissions] = useState<MissionSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { showXP, showCoin, showInfo } = useFeedback();
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      if (!user) return;
+      try {
+        const remote = await loadMissionSubmissions();
+        if (active) setSubmissions(remote);
+      } catch (loadError) {
+        if (active) {
+          setError(loadError instanceof Error ? loadError.message : 'Mission submissions are unavailable right now.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    return () => { active = false; };
+  }, [user]);
 
-  const [showCelebration, setShowCelebration] = useState<string | null>(null);
-  const [completingMission, setCompletingMission] = useState<string | null>(null);
-
-  const handleComplete = async (missionId: string) => {
-    const mission = missions.find((m) => m.id === missionId);
-
-    if (!mission || mission.completed || completingMission === missionId) {
-      return;
-    }
-
-    try {
-      setCompletingMission(missionId);
-
-      // Mark mission as completed
-      completeMission(missionId);
-
-      await grantReward('mission', mission.xpReward, mission.coinReward);
-
-      // Show reward notifications
-      showXP(mission.xpReward);
-      showCoin(mission.coinReward);
-
-      // Show celebration
-      setShowCelebration(missionId);
-
-      setTimeout(() => {
-        setShowCelebration(null);
-      }, 2000);
-    } catch (error) {
-      showInfo(error instanceof Error ? error.message : 'Unable to save your mission reward.');
-    } finally {
-      setCompletingMission(null);
-    }
-  };
-
-  const handleProgress = async (
-    missionId: string,
-    progress: number
-  ) => {
-    updateMissionProgress(missionId, progress);
-
-    if (progress >= 100) {
-      await handleComplete(missionId);
-    }
-  };
-
-  const activeMissions = missions.filter(
-    (mission) => !mission.completed
-  );
-
-  const doneMissions = missions.filter(
-    (mission) => mission.completed
-  );
-
-  const totalXpEarned = missions.reduce(
-    (sum, mission) =>
-      sum + (mission.completed ? mission.xpReward : 0),
-    0
-  );
+  const pendingIds = useMemo(() => new Set(submissions.filter((item) => item.status === 'pending').map((item) => item.missionId)), [submissions]);
+  const verifiedIds = useMemo(() => new Set(submissions.filter((item) => item.status === 'verified').map((item) => item.missionId)), [submissions]);
+  const selectedMission = missions.find((mission) => mission.id === selectedId) ?? null;
+  const totalXp = missions.filter((mission) => mission.completed).reduce((sum, mission) => sum + mission.xpReward, 0);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <PageHeader
-        title="Missions"
-        icon={<Target className="w-5 h-5" />}
-        subtitle="Complete real-world eco actions to earn XP and coins. Every small action makes a difference!"
-      />
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <Card className="p-5 text-center animate-slide-up stagger-1">
-          <div className="text-3xl font-extrabold text-leaf-600">
-            {completedMissions}
-          </div>
-
-          <div className="text-sm text-leaf-600/60 font-medium">
-            Completed
-          </div>
-        </Card>
-
-        <Card className="p-5 text-center animate-slide-up stagger-2">
-          <div className="text-3xl font-extrabold text-coral-600">
-            {activeMissions.length}
-          </div>
-
-          <div className="text-sm text-leaf-600/60 font-medium">
-            In Progress
-          </div>
-        </Card>
-
-        <Card className="p-5 text-center animate-slide-up stagger-3">
-          <div className="text-3xl font-extrabold text-sun-600">
-            {totalXpEarned}
-          </div>
-
-          <div className="text-sm text-leaf-600/60 font-medium">
-            XP Earned
-          </div>
-        </Card>
+      <PageHeader title="Missions" icon={<Target className="w-5 h-5" />} subtitle="Turn learning into real-world impact. Submit proof and our team will verify your action." />
+      <div className="grid grid-cols-3 gap-3 sm:gap-5 mb-8">
+        <Stat value={completedMissions + [...verifiedIds].filter((id) => !missions.some((mission) => mission.id === id && mission.completed)).length} label="Verified" />
+        <Stat value={pendingIds.size} label="Pending review" />
+        <Stat value={`${totalXp} XP`} label="Earned" />
       </div>
-
-      {/* Active Missions */}
-      <h3 className="text-xl font-extrabold text-leaf-800 mb-4 flex items-center gap-2">
-        <Target className="w-5 h-5 text-coral-400" />
-        Active Missions
-      </h3>
-
-      {activeMissions.length === 0 ? (
-        <Card className="p-10 text-center mb-10">
-          <Target className="w-12 h-12 text-leaf-200 mx-auto mb-3" />
-
-          <h4 className="font-extrabold text-leaf-800">
-            No missions yet
-          </h4>
-
-          <p className="text-sm text-leaf-600/60 mt-1">
-            Check back soon for new eco challenges!
-          </p>
-        </Card>
-      ) : (
-        <div className="grid sm:grid-cols-2 gap-6 mb-10">
-          {activeMissions.map((mission, i) => {
-            const isCompleting =
-              completingMission === mission.id;
-
-            return (
-              <Card
-                key={mission.id}
-                className={`p-6 animate-slide-up stagger-${Math.min(
-                  i + 1,
-                  8
-                )} relative overflow-hidden`}
-              >
-                {/* Celebration */}
-                {showCelebration === mission.id && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/90 backdrop-blur rounded-3xl animate-pop-in">
-                    <div className="text-center">
-                      <PartyPopper className="w-12 h-12 text-sun-400 mx-auto mb-2 animate-bounce-soft" />
-
-                      <div className="text-2xl font-extrabold gradient-text">
-                        Mission Complete!
-                      </div>
-
-                      <div className="flex items-center justify-center gap-3 mt-2">
-                        <Badge variant="green" size="md">
-                          +{mission.xpReward} XP
-                        </Badge>
-
-                        <Badge variant="gold" size="md">
-                          +{mission.coinReward} 🪙
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Mission Header */}
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`w-16 h-16 rounded-3xl bg-gradient-to-br ${
-                      mission.color
-                    } flex items-center justify-center text-3xl shadow-soft flex-shrink-0`}
-                  >
-                    {mission.emoji}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge
-                        variant={
-                          mission.difficulty === 'Beginner'
-                            ? 'green'
-                            : mission.difficulty === 'Intermediate'
-                            ? 'gold'
-                            : 'coral'
-                        }
-                        size="sm"
-                      >
-                        {mission.difficulty}
-                      </Badge>
-                    </div>
-
-                    <h4 className="font-extrabold text-leaf-800">
-                      {mission.title}
-                    </h4>
-
-                    <p className="text-sm text-leaf-600/70 mt-1">
-                      {mission.description}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Rewards */}
-                <div className="mt-4 flex items-center gap-3">
-                  <Badge
-                    variant="green"
-                    size="sm"
-                    icon={<Zap className="w-3 h-3" />}
-                  >
-                    +{mission.xpReward} XP
-                  </Badge>
-
-                  <Badge
-                    variant="gold"
-                    size="sm"
-                    icon={<Coins className="w-3 h-3" />}
-                  >
-                    +{mission.coinReward} 🪙
-                  </Badge>
-                </div>
-
-                {/* Progress */}
-                {mission.progress > 0 &&
-                  mission.progress < 100 && (
-                    <div className="mt-4">
-                      <div className="flex justify-between text-xs text-leaf-600/60 mb-1">
-                        <span>Progress</span>
-                        <span>{mission.progress}%</span>
-                      </div>
-
-                      <ProgressBar
-                        value={mission.progress}
-                        gradient="from-coral-400 to-sun-400"
-                      />
-                    </div>
-                  )}
-
-                {/* Actions */}
-                <div className="mt-5 flex gap-2">
-                  {mission.progress === 0 && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isCompleting}
-                        onClick={() =>
-                          handleProgress(mission.id, 50)
-                        }
-                      >
-                        Mark 50% Done
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        disabled={isCompleting}
-                        onClick={() =>
-                          handleComplete(mission.id)
-                        }
-                        icon={
-                          <CheckCircle2 className="w-4 h-4" />
-                        }
-                      >
-                        {isCompleting
-                          ? 'Saving...'
-                          : 'Complete'}
-                      </Button>
-                    </>
-                  )}
-
-                  {mission.progress > 0 &&
-                    mission.progress < 100 && (
-                      <Button
-                        size="sm"
-                        fullWidth
-                        disabled={isCompleting}
-                        onClick={() =>
-                          handleComplete(mission.id)
-                        }
-                        icon={
-                          <CheckCircle2 className="w-4 h-4" />
-                        }
-                      >
-                        {isCompleting
-                          ? 'Saving...'
-                          : 'Mark Complete'}
-                      </Button>
-                    )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Completed Missions */}
-      {doneMissions.length > 0 && (
-        <>
-          <h3 className="text-xl font-extrabold text-leaf-800 mb-4 flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-leaf-500" />
-            Completed Missions
-          </h3>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {doneMissions.map((mission) => (
-              <Card
-                key={mission.id}
-                className="p-5 animate-slide-up opacity-75 hover:opacity-100 transition-opacity"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${
-                      mission.color
-                    } flex items-center justify-center text-2xl flex-shrink-0`}
-                  >
-                    {mission.emoji}
-                  </div>
-
-                  <div className="flex-1">
-                    <h4 className="font-bold text-leaf-800 flex items-center gap-2">
-                      {mission.title}
-
-                      <CheckCircle2 className="w-4 h-4 text-leaf-500" />
-                    </h4>
-
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="green" size="sm">
-                        +{mission.xpReward} XP
-                      </Badge>
-
-                      <Badge variant="gold" size="sm">
-                        +{mission.coinReward} 🪙
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
+      {error && <Card className="p-4 mb-6 border-coral-200 bg-coral-50"><p className="text-sm text-coral-700">Live verification is unavailable. Your submission is saved on this device and will retry when the service is available.</p></Card>}
+      <div className="flex items-center justify-between mb-4"><h2 className="text-2xl font-extrabold text-leaf-800">Choose an action</h2><span className="text-sm text-leaf-600/60">{missions.length} missions</span></div>
+      {loading ? <Card className="p-8 text-center text-leaf-600">Loading missions...</Card> : <div className="grid md:grid-cols-2 gap-5">{missions.map((mission) => {
+        const submission = submissions.find((item) => item.missionId === mission.id && item.status !== 'rejected');
+        const pending = submission?.status === 'pending';
+        const verified = mission.completed || verifiedIds.has(mission.id);
+        return <Card key={mission.id} className="p-5 relative overflow-hidden">
+          <div className="flex items-start gap-4"><div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${mission.color} flex items-center justify-center text-3xl shrink-0`}>{mission.emoji}</div><div className="min-w-0 flex-1"><div className="flex flex-wrap gap-2"><Badge variant={mission.difficulty === 'Beginner' ? 'green' : mission.difficulty === 'Intermediate' ? 'gold' : 'coral'} size="sm">{mission.difficulty}</Badge>{mission.completed && <Badge variant="green" size="sm"><CheckCircle2 className="w-3 h-3" /> Verified</Badge>}{pending && <Badge variant="teal" size="sm"><Clock3 className="w-3 h-3" /> Pending</Badge>}</div><h3 className="font-extrabold text-leaf-800 mt-2">{mission.title}</h3><p className="text-sm text-leaf-600/70 mt-1">{mission.description}</p></div></div>
+          <div className="flex gap-2 mt-4"><Badge variant="green" size="sm">+{mission.xpReward} XP</Badge><Badge variant="gold" size="sm"><Coins className="w-3 h-3" /> +{mission.coinReward}</Badge>{verified && <Badge variant="green" size="sm"><CheckCircle2 className="w-3 h-3" /> Rewarded</Badge>}</div>
+          {mission.progress > 0 && !mission.completed && <div className="mt-4"><div className="flex justify-between text-xs text-leaf-600/60 mb-1"><span>Personal progress</span><span>{mission.progress}%</span></div><ProgressBar value={mission.progress} gradient="from-coral-400 to-sun-400" height="h-2" /></div>}
+          <Button fullWidth size="sm" variant={verified || pending ? 'outline' : 'primary'} disabled={verified || pending} className="mt-5" onClick={() => setSelectedId(mission.id)} icon={pending ? <Clock3 className="w-4 h-4" /> : <Upload className="w-4 h-4" />}>{verified ? 'Action verified' : pending ? 'Awaiting verification' : 'Submit proof'}</Button>
+        </Card>;
+      })}</div>}
+      {selectedMission && <ProofDialog mission={selectedMission} onClose={() => setSelectedId(null)} onSubmitted={(submission) => { setSubmissions((current) => [...current.filter((item) => item.missionId !== submission.missionId), submission]); setSelectedId(null); }} showInfo={showInfo} />}
     </div>
   );
+}
+
+function Stat({ value, label }: { value: string | number; label: string }) {
+  return <Card className="p-4 sm:p-5 text-center"><div className="text-2xl sm:text-3xl font-extrabold text-leaf-600">{value}</div><div className="text-xs sm:text-sm text-leaf-600/60 font-medium mt-1">{label}</div></Card>;
+}
+
+function ProofDialog({ mission, onClose, onSubmitted, showInfo }: { mission: ReturnType<typeof useApp>['missions'][number]; onClose: () => void; onSubmitted: (submission: MissionSubmission) => void; showInfo: (message: string) => void }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [proofData, setProofData] = useState('');
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const chooseFile = (next: File | undefined) => {
+    if (!next) return;
+    if (!next.type.startsWith('image/') || next.size > 20 * 1024) { showInfo('Please choose an image proof smaller than 20 KB.'); return; }
+    setFile(next);
+    const reader = new FileReader();
+    reader.onload = () => setProofData(String(reader.result));
+    reader.readAsDataURL(next);
+  };
+  const submit = async () => {
+    if (!file || !proofData) { showInfo('Add a photo as proof before submitting.'); return; }
+    setSaving(true);
+    try {
+      const submission = await submitMissionProof({ missionId: mission.id, proofName: file.name, proofData, note: note.trim() });
+      onSubmitted(submission);
+    } catch (error) {
+      showInfo(error instanceof Error ? error.message : 'Unable to submit proof.');
+    } finally { setSaving(false); }
+  };
+  return <div className="fixed inset-0 z-50 bg-leaf-950/30 backdrop-blur-sm flex items-center justify-center p-4" role="dialog" aria-modal="true"><Card className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto"><div className="flex justify-between items-start"><div><p className="text-sm font-bold text-leaf-500">Mission instructions</p><h2 className="text-2xl font-extrabold text-leaf-800 mt-1">{mission.title}</h2></div><button onClick={onClose} className="text-leaf-500"><X className="w-5 h-5" /></button></div><p className="text-sm text-leaf-600/75 mt-4">{mission.description}</p><div className="bg-leaf-50 rounded-2xl p-4 mt-4 text-sm text-leaf-700"><p className="font-bold">How to complete it</p><p className="mt-1">Do the action safely, take a clear photo that shows the result, then tell us briefly what you did.</p></div><label className="block mt-5"><span className="text-sm font-bold text-leaf-700">Photo proof</span><input type="file" accept="image/*" className="block w-full mt-2 text-sm" onChange={(event) => chooseFile(event.target.files?.[0])} />{file && <span className="text-xs text-leaf-600/60 flex items-center gap-1 mt-2"><FileImage className="w-3 h-3" /> {file.name}</span>}</label><label className="block mt-4"><span className="text-sm font-bold text-leaf-700">What did you do? <span className="font-normal">(optional)</span></span><textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={500} rows={3} className="w-full mt-2 rounded-2xl border border-leaf-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-leaf-300" placeholder="Share a quick note..." /></label><Button fullWidth className="mt-5" disabled={saving} onClick={() => void submit()} icon={<Send className="w-4 h-4" />}>{saving ? 'Submitting...' : 'Submit for verification'}</Button></Card></div>;
 }

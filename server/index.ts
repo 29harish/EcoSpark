@@ -12,6 +12,7 @@ const PORT = Number(process.env.PORT) || 5000;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY_ITEMS = 20;
 const MAX_ARRAY_ITEMS = 20;
+const MAX_PROOF_LENGTH = 28_000;
 
 const REWARD_AMOUNTS = {
   lesson: { maxXp: 100, maxCoins: 20 },
@@ -761,9 +762,202 @@ app.post(
       });
     }
 
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: activityProgress } = await supabaseAdmin
+      .from('user_progress')
+      .select('lessons, missions, streak, last_activity_date')
+      .eq('firebase_uid', req.user!.uid)
+      .maybeSingle();
+    const previousDate = activityProgress?.last_activity_date;
+    const yesterday = new Date();
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const yesterdayValue = yesterday.toISOString().slice(0, 10);
+    const nextStreak = previousDate === today
+      ? Number(activityProgress?.streak) || 0
+      : previousDate === yesterdayValue
+        ? (Number(activityProgress?.streak) || 0) + 1
+        : 1;
+    const { error: activityError } = await supabaseAdmin
+      .from('user_progress')
+      .upsert({
+        firebase_uid: req.user!.uid,
+        lessons: activityProgress?.lessons ?? [],
+        missions: activityProgress?.missions ?? [],
+        streak: nextStreak,
+        last_activity_date: today,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'firebase_uid' });
+
+    if (activityError) {
+      console.error('Activity progress update failed:', activityError.message);
+      return res.status(500).json({ success: false, error: 'Unable to save activity progress.' });
+    }
+
     return res.json({
       success: true,
       profile: data,
+    });
+  }
+);
+
+/* -------------------------------------------------------------------------- */
+/* PROGRESS                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function normalizeProgress(row: {
+  lessons?: unknown;
+  missions?: unknown;
+  streak?: unknown;
+  last_activity_date?: unknown;
+}, xp: number, coins: number) {
+  const lessons = Array.isArray(row.lessons) ? row.lessons : [];
+  const missions = Array.isArray(row.missions) ? row.missions : [];
+  const streak = Math.max(0, Math.floor(Number(row.streak) || 0));
+  return {
+    lessons,
+    missions,
+    streak,
+    lastActivityDate: typeof row.last_activity_date === 'string' ? row.last_activity_date : null,
+    impactScore: Math.round(xp * 0.1 + coins * 0.05 + streak * 5),
+  };
+}
+
+app.get('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const [{ data: progress, error: progressError }, { data: profile, error: profileError }] = await Promise.all([
+    supabaseAdmin.from('user_progress').select('lessons, missions, streak, last_activity_date').eq('firebase_uid', req.user!.uid).maybeSingle(),
+    supabaseAdmin.from('profiles').select('xp, eco_coins').eq('firebase_uid', req.user!.uid).maybeSingle(),
+  ]);
+
+  if (progressError || profileError) {
+    console.error('Progress fetch failed:', progressError?.message || profileError?.message);
+    return res.status(500).json({ success: false, error: 'Unable to fetch progress.' });
+  }
+
+  return res.json({
+    success: true,
+    progress: normalizeProgress(progress ?? {}, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0),
+  });
+});
+
+app.put('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const body = req.body as { lessons?: unknown; missions?: unknown };
+  const validItems = (items: unknown, type: 'lesson' | 'mission') => Array.isArray(items) && items.length <= 100 && items.every((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const value = item as Record<string, unknown>;
+    if (typeof value.id !== 'string' || !/^[a-z0-9-]{1,64}$/.test(value.id) || typeof value.completed !== 'boolean') return false;
+    return type === 'lesson' || (typeof value.progress === 'number' && isNumberInRange(value.progress, 0, 100));
+  });
+
+  if (!validItems(body.lessons, 'lesson') || !validItems(body.missions, 'mission')) {
+    return res.status(400).json({ success: false, error: 'Invalid progress payload.' });
+  }
+
+  const { data, error } = await supabaseAdmin.from('user_progress').upsert({
+    firebase_uid: req.user!.uid,
+    lessons: body.lessons,
+    missions: body.missions,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'firebase_uid' }).select('lessons, missions, streak, last_activity_date').single();
+
+  if (error || !data) {
+    console.error('Progress save failed:', error?.message);
+    return res.status(500).json({ success: false, error: 'Unable to save progress.' });
+  }
+
+  const { data: profile } = await supabaseAdmin.from('profiles').select('xp, eco_coins').eq('firebase_uid', req.user!.uid).maybeSingle();
+  return res.json({ success: true, progress: normalizeProgress(data, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0) });
+});
+
+/* -------------------------------------------------------------------------- */
+/* MISSION SUBMISSIONS                                                        */
+/* -------------------------------------------------------------------------- */
+
+app.get(
+  '/api/missions/submissions',
+  requireAuth,
+  async (req: AuthenticatedRequest, res) => {
+    const { data, error } = await supabaseAdmin
+      .from('mission_submissions')
+      .select('id, mission_id, proof_name, proof_data, note, status, submitted_at, verified_at')
+      .eq('firebase_uid', req.user!.uid)
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('Mission submissions fetch failed:', error.message);
+      return res.status(500).json({ success: false, error: 'Unable to load mission submissions.' });
+    }
+
+    return res.json({
+      success: true,
+      submissions: (data ?? []).map((submission) => ({
+        id: submission.id,
+        missionId: submission.mission_id,
+        proofName: submission.proof_name,
+        proofData: submission.proof_data,
+        note: submission.note ?? '',
+        status: submission.status,
+        submittedAt: submission.submitted_at,
+        verifiedAt: submission.verified_at ?? undefined,
+      })),
+    });
+  }
+);
+
+app.post(
+  '/api/missions/submissions',
+  requireAuth,
+  async (req: AuthenticatedRequest, res) => {
+    const body = req.body as {
+      missionId?: unknown;
+      proofName?: unknown;
+      proofData?: unknown;
+      note?: unknown;
+    };
+
+    if (
+      typeof body.missionId !== 'string' ||
+      !/^[a-z0-9-]{1,64}$/.test(body.missionId) ||
+      typeof body.proofName !== 'string' ||
+      body.proofName.length < 1 ||
+      body.proofName.length > 160 ||
+      typeof body.proofData !== 'string' ||
+      !body.proofData.startsWith('data:image/') ||
+      body.proofData.length > MAX_PROOF_LENGTH ||
+      (body.note !== undefined && (typeof body.note !== 'string' || body.note.length > 500))
+    ) {
+      return res.status(400).json({ success: false, error: 'Mission proof is invalid or too large.' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('mission_submissions')
+      .insert({
+        firebase_uid: req.user!.uid,
+        mission_id: body.missionId,
+        proof_name: body.proofName,
+        proof_data: body.proofData,
+        note: body.note ?? '',
+        status: 'pending',
+      })
+      .select('id, mission_id, proof_name, proof_data, note, status, submitted_at, verified_at')
+      .single();
+
+    if (error || !data) {
+      console.error('Mission submission failed:', error?.message);
+      return res.status(500).json({ success: false, error: 'Unable to submit mission proof.' });
+    }
+
+    return res.status(201).json({
+      success: true,
+      submission: {
+        id: data.id,
+        missionId: data.mission_id,
+        proofName: data.proof_name,
+        proofData: data.proof_data,
+        note: data.note ?? '',
+        status: data.status,
+        submittedAt: data.submitted_at,
+        verifiedAt: data.verified_at ?? undefined,
+      },
     });
   }
 );

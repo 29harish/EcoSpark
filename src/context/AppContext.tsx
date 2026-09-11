@@ -17,7 +17,7 @@ import {
   type Mission,
 } from '@/data/mockData';
 import type { AssessmentResult } from '@/data/assessment';
-import { loadProfile, saveAssessmentProfile, saveReward } from '@/lib/profileStore';
+import { loadProfile, loadProgress, saveAssessmentProfile, saveProgress, saveReward, type ProgressSnapshot } from '@/lib/profileStore';
 
 export type PageId =
   | 'dashboard'
@@ -67,9 +67,9 @@ interface AppState {
   completedMissions: number;
 
   // Actions
-  completeLesson: (lessonId: string) => void;
-  completeMission: (missionId: string) => void;
-  updateMissionProgress: (missionId: string, progress: number) => void;
+  completeLesson: (lessonId: string) => Promise<void>;
+  completeMission: (missionId: string) => Promise<void>;
+  updateMissionProgress: (missionId: string, progress: number) => Promise<void>;
   addXP: (amount: number) => void;
   addCoins: (amount: number) => void;
   spendCoins: (amount: number) => boolean;
@@ -91,21 +91,6 @@ function calculateLevel(xp: number): { level: number; xpInCurrentLevel: number; 
 
 const AppContext = createContext<AppState | null>(null);
 
-const STORAGE_KEY = 'ecospark_state_v1';
-
-interface PersistedState {
-  xp: number;
-  coins: number;
-  gardenLevel: number;
-  lessons: Lesson[];
-  missions: Mission[];
-  assessmentCompleted?: boolean;
-  assessmentResult?: AssessmentResult | null;
-  profile?: UserProfile | null;
-  streak?: number;
-  lastActivityDate?: string | null;
-}
-
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -122,16 +107,6 @@ export interface UserProfile {
   ecoCoins?: number;
 }
 
-function loadPersistedState(uid: string): Partial<PersistedState> | null {
-  try {
-    const raw = localStorage.getItem(`${STORAGE_KEY}:${uid}`);
-    if (!raw) return null;
-    return JSON.parse(raw) as Partial<PersistedState>;
-  } catch {
-    return null;
-  }
-}
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState<PageId>('landing');
   const [user, setUser] = useState<User | null>(null);
@@ -142,13 +117,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [coins, setCoins] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lastActivityDate, setLastActivityDate] = useState<string | null>(null);
+  const [impactScore, setImpactScore] = useState(0);
   const [gardenLevel, setGardenLevel] = useState(3);
 
   const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
   const [missions, setMissions] = useState<Mission[]>(initialMissions);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stateHydrated, setStateHydrated] = useState(false);
   const coinsRef = useRef(coins);
   const assessmentCompleted = Boolean(
     profile?.assessmentCompleted &&
@@ -159,8 +134,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const gardenRank =
     level >= 12 ? 'Earth Guardian' : level >= 5 ? 'Forest Explorer' : 'Seedling';
-  const impactScore = Math.round(xp * 0.1 + coins * 0.05 + streak * 5);
-
   const navigate = useCallback((page: PageId) => {
     setCurrentPage(page);
     setActiveLessonId(null);
@@ -200,46 +173,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const applyProgressSnapshot = useCallback((snapshot: ProgressSnapshot) => {
+    setLessons((current) => current.map((lesson) => ({
+      ...lesson,
+      completed: snapshot.lessons.find((item) => item.id === lesson.id)?.completed ?? lesson.completed,
+    })));
+    setMissions((current) => current.map((mission) => {
+      const saved = snapshot.missions.find((item) => item.id === mission.id);
+      return saved ? { ...mission, progress: saved.progress, completed: saved.completed } : mission;
+    }));
+    setStreak(snapshot.streak);
+    setLastActivityDate(snapshot.lastActivityDate);
+    setImpactScore(snapshot.impactScore);
+  }, []);
+
   const grantReward = useCallback(async (activity: 'lesson' | 'quiz' | 'mission', rewardXp: number, rewardCoins: number) => {
     const savedProfile = await saveReward(activity, rewardXp, rewardCoins);
     setXp(Number(savedProfile.xp) || 0);
     setCoins(Number(savedProfile.eco_coins) || 0);
     coinsRef.current = Number(savedProfile.eco_coins) || 0;
-    const today = new Date().toISOString().slice(0, 10);
-    setStreak((current) => {
-      if (lastActivityDate === today) return current;
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return lastActivityDate === yesterday.toISOString().slice(0, 10) ? current + 1 : 1;
-    });
-    setLastActivityDate(today);
-  }, [lastActivityDate]);
+    applyProgressSnapshot(await loadProgress());
+  }, [applyProgressSnapshot]);
 
-  const completeLesson = useCallback((lessonId: string) => {
-    setLessons((prev) =>
-      prev.map((l) => (l.id === lessonId ? { ...l, completed: true } : l))
-    );
-  }, []);
+  const persistProgress = useCallback(async (nextLessons: Lesson[], nextMissions: Mission[]) => {
+    applyProgressSnapshot(await saveProgress({
+      lessons: nextLessons.map(({ id, completed }) => ({ id, completed })),
+      missions: nextMissions.map(({ id, progress, completed }) => ({ id, progress, completed })),
+    }));
+  }, [applyProgressSnapshot]);
 
-  const completeMission = useCallback((missionId: string) => {
-    setMissions((prev) =>
-      prev.map((m) =>
-        m.id === missionId
-          ? { ...m, completed: true, progress: 100 }
-          : m
-      )
-    );
-  }, []);
+  const completeLesson = useCallback(async (lessonId: string) => {
+    const nextLessons = lessons.map((lesson) => lesson.id === lessonId ? { ...lesson, completed: true } : lesson);
+    setLessons(nextLessons);
+    await persistProgress(nextLessons, missions);
+  }, [lessons, missions, persistProgress]);
 
-  const updateMissionProgress = useCallback((missionId: string, progress: number) => {
-    setMissions((prev) =>
-      prev.map((m) =>
-        m.id === missionId
-          ? { ...m, progress: Math.min(100, progress), completed: progress >= 100 }
-          : m
-      )
-    );
-  }, []);
+  const completeMission = useCallback(async (missionId: string) => {
+    const nextMissions = missions.map((mission) => mission.id === missionId ? { ...mission, completed: true, progress: 100 } : mission);
+    setMissions(nextMissions);
+    await persistProgress(lessons, nextMissions);
+  }, [lessons, missions, persistProgress]);
+
+  const updateMissionProgress = useCallback(async (missionId: string, progress: number) => {
+    const nextMissions = missions.map((mission) => mission.id === missionId ? { ...mission, progress: Math.min(100, progress), completed: progress >= 100 } : mission);
+    setMissions(nextMissions);
+    await persistProgress(lessons, nextMissions);
+  }, [lessons, missions, persistProgress]);
 
   const completedLessons = lessons.filter((l) => l.completed).length;
   const completedMissions = missions.filter((m) => m.completed).length;
@@ -255,27 +234,27 @@ useEffect(() => {
     if (!firebaseUser) {
       setProfile(null);
       setAssessmentResult(null);
-      setStateHydrated(false);
       setAuthLoading(false);
     }
 
     if (firebaseUser) {
-      const persisted = loadPersistedState(firebaseUser.uid);
       setXp(0);
       setCoins(0);
       coinsRef.current = 0;
-      setStreak(persisted?.streak ?? 0);
-      setLastActivityDate(persisted?.lastActivityDate ?? null);
-      setGardenLevel(persisted?.gardenLevel ?? 3);
-      setLessons(persisted?.lessons ?? initialLessons);
-      setMissions(persisted?.missions ?? initialMissions);
-      setAssessmentResult(persisted?.assessmentResult ?? null);
-      setProfile(persisted?.profile?.uid === firebaseUser.uid ? persisted.profile : null);
-      setStateHydrated(true);
+      setStreak(0);
+      setLastActivityDate(null);
+      setImpactScore(0);
+      setGardenLevel(3);
+      setLessons(initialLessons);
+      setMissions(initialMissions);
+      setAssessmentResult(null);
+      setProfile(null);
       let remoteProfile: UserProfile | null = null;
       let profileLoadSucceeded = false;
       try {
         remoteProfile = await loadProfile(firebaseUser.uid);
+        const remoteProgress = await loadProgress();
+        applyProgressSnapshot(remoteProgress);
         profileLoadSucceeded = true;
         if (remoteProfile) {
           const loadedProfile = remoteProfile;
@@ -321,35 +300,13 @@ useEffect(() => {
   });
 
   return unsubscribe;
-}, []);
+}, [applyProgressSnapshot]);
 
   useEffect(() => {
     if (level !== gardenLevel) {
       setGardenLevel(level);
     }
   }, [level, gardenLevel]);
-
-  // Persist state to localStorage
-  useEffect(() => {
-    const state: PersistedState = {
-      xp,
-      coins,
-      gardenLevel,
-      lessons,
-      missions,
-      assessmentCompleted,
-      assessmentResult,
-      profile,
-      streak,
-      lastActivityDate,
-    };
-    if (!user || !stateHydrated) return;
-    try {
-      localStorage.setItem(`${STORAGE_KEY}:${user.uid}`, JSON.stringify(state));
-    } catch {
-      // ignore quota errors
-    }
-  }, [user, stateHydrated, xp, coins, gardenLevel, lessons, missions, assessmentCompleted, assessmentResult, profile, streak, lastActivityDate]);
 
   const completeAssessment = useCallback(async (result: AssessmentResult) => {
     setAssessmentResult(result);
@@ -383,7 +340,6 @@ useEffect(() => {
     setUser(null);
     setProfile(null);
     setAssessmentResult(null);
-    setStateHydrated(false);
     navigate('landing');
   } catch (error) {
     console.error('Logout failed:', error);

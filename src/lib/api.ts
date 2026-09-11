@@ -4,10 +4,7 @@ export const API_URL = (
   import.meta.env.VITE_API_URL || 'http://localhost:5000'
 ).replace(/\/$/, '');
 
-export async function apiRequest(
-  path: string,
-  options: RequestInit = {}
-) {
+export async function apiRequest(path: string, options: RequestInit = {}) {
   const user = auth.currentUser;
 
   if (!user) {
