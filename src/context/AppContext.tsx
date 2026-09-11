@@ -16,6 +16,7 @@ import {
   type Mission,
 } from '@/data/mockData';
 import type { AssessmentResult } from '@/data/assessment';
+import { loadProfile, saveAssessmentProfile } from '@/lib/profileStore';
 
 export type PageId =
   | 'dashboard'
@@ -74,7 +75,7 @@ interface AppState {
   assessmentResult: AssessmentResult | null;
   profile: UserProfile | null;
   hasCompletedAssessment: (uid: string) => boolean;
-  completeAssessment: (result: AssessmentResult) => void;
+  completeAssessment: (result: AssessmentResult) => Promise<void>;
 }
 
 const LEVEL_XP_BASE = 250;
@@ -225,34 +226,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // reach 12 ("Earth Guardian"), leaving high-XP users visually stuck.
   
 useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
     setUser(firebaseUser);
-    setAuthLoading(false);
+    if (!firebaseUser) {
+      setAuthLoading(false);
+    }
 
-    setCurrentPage((currentPage) => {
+    if (firebaseUser) {
+      let remoteProfile: UserProfile | null = null;
+      try {
+        remoteProfile = await loadProfile(firebaseUser.uid);
+        if (remoteProfile) setProfile(remoteProfile);
+      } catch (error) {
+        console.error('Unable to load Supabase profile:', error);
+      }
+
+      setAuthLoading(false);
+      setCurrentPage((currentPage) => {
       // Firebase restored a logged-in user after refresh
       if (firebaseUser && currentPage === 'landing') {
         const completedForUser =
-          profile?.uid === firebaseUser.uid && profile.assessmentCompleted;
+          remoteProfile?.uid === firebaseUser.uid && remoteProfile.assessmentCompleted;
         return completedForUser ? 'dashboard' : 'assessment';
       }
 
-      // User is logged out while trying to access the app
-      if (
-        !firebaseUser &&
+      return currentPage;
+      });
+    } else {
+      setCurrentPage((currentPage) => (
         currentPage !== 'landing' &&
         currentPage !== 'login' &&
         currentPage !== 'signup'
-      ) {
-        return 'landing';
-      }
-
-      return currentPage;
-    });
+          ? 'landing'
+          : currentPage
+      ));
+    }
   });
 
   return unsubscribe;
-}, [profile]);
+}, []);
 
   useEffect(() => {
     if (level !== gardenLevel) {
@@ -279,10 +291,10 @@ useEffect(() => {
     }
   }, [xp, coins, gardenLevel, lessons, missions, assessmentCompleted, assessmentResult, profile]);
 
-  const completeAssessment = useCallback((result: AssessmentResult) => {
+  const completeAssessment = useCallback(async (result: AssessmentResult) => {
     setAssessmentResult(result);
     if (user) {
-      setProfile({
+      const nextProfile: UserProfile = {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName,
@@ -294,7 +306,9 @@ useEffect(() => {
         recommendedTopics: result.recommendedTopics,
         assessmentCompleted: true,
         assessmentCompletedAt: result.completedAt,
-      });
+      };
+      const savedProfile = await saveAssessmentProfile(nextProfile, result);
+      setProfile(savedProfile);
     }
   }, [user]);
 

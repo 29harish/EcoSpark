@@ -97,17 +97,28 @@ export function Assessment() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>(userAssessmentResult?.answers ?? {});
   const [result, setResult] = useState<AssessmentResult | null>(userAssessmentResult);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const question = assessmentQuestions[questionIndex];
   const selectedAnswer = answers[question.id];
   const progress = ((questionIndex + 1) / assessmentQuestions.length) * 100;
   const unanswered = useMemo(() => assessmentQuestions.filter((item) => !answers[item.id]).length, [answers]);
 
-  const finish = () => {
+  const finish = async () => {
     const nextResult = buildAssessmentResult(answers);
-    setResult(nextResult);
-    completeAssessment(nextResult);
-    setView('results');
+    setSaving(true);
+    setSaveError('');
+    try {
+      await completeAssessment(nextResult);
+      setResult(nextResult);
+      setView('results');
+    } catch (error) {
+      console.error('Unable to save assessment profile:', error);
+      setSaveError('We could not save your Eco Profile. Please check your connection and try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (view === 'results' && result) {
@@ -140,7 +151,7 @@ export function Assessment() {
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
       <div className="mb-7 flex items-center justify-between"><div><p className="text-sm font-black uppercase tracking-[0.18em] text-leaf-600">EcoSpark Assessment</p><p className="mt-1 text-sm font-bold text-leaf-500">Question {questionIndex + 1} of {assessmentQuestions.length}</p></div><div className="rounded-full bg-leaf-100 px-3 py-1.5 text-xs font-black text-leaf-700">{Math.round(progress)}%</div></div>
       <ProgressBar value={progress} gradient="from-leaf-400 to-lagoon-500" height="h-3" showGlow />
-      <Card className="mt-8 p-6 sm:p-10"><div className="mb-8 flex items-center justify-between gap-4"><span className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black" style={{ color: topicDetails[question.topic].color, backgroundColor: `${topicDetails[question.topic].color}18` }}><TopicIcon topic={question.topic} /> {question.topic}</span><span className="text-xs font-bold text-leaf-400">{question.difficulty}</span></div><div className="mb-8 text-center"><div className="mb-4 text-5xl">{question.icon}</div><h1 className="text-2xl font-black leading-snug text-leaf-950 sm:text-3xl">{question.question}</h1></div><div className="grid gap-3">{question.options.map((option, index) => { const selected = selectedAnswer === option; return <button key={option} onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))} className={`flex items-center gap-4 rounded-2xl border-2 p-4 text-left text-sm font-bold transition-all sm:p-5 sm:text-base ${selected ? 'border-leaf-500 bg-leaf-50 text-leaf-900 shadow-soft' : 'border-leaf-100 bg-white text-leaf-700 hover:-translate-y-0.5 hover:border-leaf-300 hover:bg-leaf-50/50'}`}><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black ${selected ? 'bg-leaf-600 text-white' : 'bg-leaf-50 text-leaf-500'}`}>{String.fromCharCode(65 + index)}</span>{option}{selected && <CheckCircle2 className="ml-auto h-5 w-5 text-leaf-500" />}</button>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="ghost" disabled={questionIndex === 0} onClick={() => setQuestionIndex((current) => current - 1)} icon={<ArrowLeft className="h-4 w-4" />}>Previous</Button><div className="flex items-center justify-between gap-3 sm:ml-auto"><span className="text-xs font-bold text-leaf-500">You&apos;re doing great! 🌱</span><Button disabled={!selectedAnswer} onClick={() => questionIndex === assessmentQuestions.length - 1 ? finish() : setQuestionIndex((current) => current + 1)} icon={<ArrowRight className="h-4 w-4" />}>{questionIndex === assessmentQuestions.length - 1 ? 'See Results' : 'Next'}</Button></div></div></Card><p className="mt-4 text-center text-xs font-medium text-leaf-500">{unanswered} question{unanswered === 1 ? '' : 's'} remaining</p>
+      <Card className="mt-8 p-6 sm:p-10"><div className="mb-8 flex items-center justify-between gap-4"><span className="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black" style={{ color: topicDetails[question.topic].color, backgroundColor: `${topicDetails[question.topic].color}18` }}><TopicIcon topic={question.topic} /> {question.topic}</span><span className="text-xs font-bold text-leaf-400">{question.difficulty}</span></div><div className="mb-8 text-center"><div className="mb-4 text-5xl">{question.icon}</div><h1 className="text-2xl font-black leading-snug text-leaf-950 sm:text-3xl">{question.question}</h1></div><div className="grid gap-3">{question.options.map((option, index) => { const selected = selectedAnswer === option; return <button key={option} onClick={() => setAnswers((current) => ({ ...current, [question.id]: option }))} className={`flex items-center gap-4 rounded-2xl border-2 p-4 text-left text-sm font-bold transition-all sm:p-5 sm:text-base ${selected ? 'border-leaf-500 bg-leaf-50 text-leaf-900 shadow-soft' : 'border-leaf-100 bg-white text-leaf-700 hover:-translate-y-0.5 hover:border-leaf-300 hover:bg-leaf-50/50'}`}><span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black ${selected ? 'bg-leaf-600 text-white' : 'bg-leaf-50 text-leaf-500'}`}>{String.fromCharCode(65 + index)}</span>{option}{selected && <CheckCircle2 className="ml-auto h-5 w-5 text-leaf-500" />}</button>; })}</div>{saveError && <div className="mt-5 rounded-xl border border-coral-200 bg-coral-50 px-4 py-3 text-sm font-bold text-coral-700">{saveError}</div>}<div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="ghost" disabled={questionIndex === 0 || saving} onClick={() => setQuestionIndex((current) => current - 1)} icon={<ArrowLeft className="h-4 w-4" />}>Previous</Button><div className="flex items-center justify-between gap-3 sm:ml-auto"><span className="text-xs font-bold text-leaf-500">You&apos;re doing great! 🌱</span><Button disabled={!selectedAnswer || saving} onClick={() => questionIndex === assessmentQuestions.length - 1 ? finish() : setQuestionIndex((current) => current + 1)} icon={<ArrowRight className="h-4 w-4" />}>{saving ? 'Saving Profile…' : questionIndex === assessmentQuestions.length - 1 ? 'See Results' : 'Next'}</Button></div></div></Card><p className="mt-4 text-center text-xs font-medium text-leaf-500">{unanswered} question{unanswered === 1 ? '' : 's'} remaining</p>
     </div>
   );
 }
