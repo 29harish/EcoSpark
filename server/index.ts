@@ -856,7 +856,7 @@ function normalizeProgress(row: {
 
 app.get('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => {
   const [{ data: progress, error: progressError }, { data: profile, error: profileError }] = await Promise.all([
-    supabaseAdmin.from('user_progress').select('lessons, missions, streak, last_activity_date').eq('firebase_uid', req.user!.uid).maybeSingle(),
+    supabaseAdmin.from('user_progress').select('lessons, missions, lessons_completed, missions_completed, learning_progress, streak, last_activity_date').eq('firebase_uid', req.user!.uid).maybeSingle(),
     supabaseAdmin.from('profiles').select('xp, eco_coins, impact_score').eq('firebase_uid', req.user!.uid).maybeSingle(),
   ]);
 
@@ -890,9 +890,11 @@ app.put('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => 
     missions: body.missions,
     lessons_completed: (body.lessons as Array<{ completed: boolean }>).filter((lesson) => lesson.completed).length,
     missions_completed: (body.missions as Array<{ completed: boolean }>).filter((mission) => mission.completed).length,
-    learning_progress: Math.round((body.lessons as Array<{ completed: boolean }>).filter((lesson) => lesson.completed).length / (body.lessons as unknown[]).length * 100),
+    learning_progress: (body.lessons as unknown[]).length > 0
+      ? Math.round((body.lessons as Array<{ completed: boolean }>).filter((lesson) => lesson.completed).length / (body.lessons as unknown[]).length * 100)
+      : 0,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'firebase_uid' }).select('lessons, missions, streak, last_activity_date').single();
+  }, { onConflict: 'firebase_uid' }).select('lessons, missions, lessons_completed, missions_completed, learning_progress, streak, last_activity_date').single();
 
   if (error || !data) {
     console.error('Progress save failed:', error?.message);
