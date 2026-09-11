@@ -12,7 +12,6 @@ import { LessonExperience } from '@/pages/LessonExperience';
 import { Missions } from '@/pages/Missions';
 import { EcoGarden } from '@/pages/EcoGarden';
 import { Leaderboard } from '@/pages/Leaderboard';
-import { Challenges } from '@/pages/Challenges';
 import { AIEcoGuide } from '@/pages/AIEcoGuide';
 import { Rewards } from '@/pages/Rewards';
 import { Profile } from '@/pages/Profile';
@@ -85,9 +84,6 @@ if (currentPage === 'landing' && !user) {
 
       case 'leaderboard':
         return <Leaderboard />;
-
-      case 'challenges':
-        return <Challenges />;
 
       case 'ai-guide':
         return <AIEcoGuide />;
