@@ -8,7 +8,7 @@ import { LandingPage } from '@/pages/LandingPage';
 import { Dashboard } from '@/pages/Dashboard';
 import { LearnHub } from '@/pages/LearnHub';
 import { LessonExperience } from '@/pages/LessonExperience';
-import { Quizzes } from '@/pages/Quizzes';
+
 import { Missions } from '@/pages/Missions';
 import { EcoGarden } from '@/pages/EcoGarden';
 import { Leaderboard } from '@/pages/Leaderboard';
@@ -76,9 +76,6 @@ if (currentPage === 'landing' && !user) {
 
       case 'lesson':
         return <LessonExperience />;
-
-      case 'quizzes':
-        return <Quizzes />;
 
       case 'missions':
         return <Missions />;
