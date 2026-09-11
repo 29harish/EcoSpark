@@ -10,7 +10,7 @@ import { useFeedback } from '@/components/ui/FeedbackToast';
 import { loadMissionSubmissions, submitMissionProof, type MissionSubmission } from '@/lib/profileStore';
 
 export function Missions() {
-  const { missions, completedMissions, user } = useApp();
+  const { missions, completedMissions, user, xp, coins, impactScore } = useApp();
   const { showInfo } = useFeedback();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<MissionSubmission[]>([]);
@@ -45,9 +45,11 @@ export function Missions() {
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <PageHeader title="Missions" icon={<Target className="w-5 h-5" />} subtitle="Turn learning into real-world impact. Submit proof and our team will verify your action." />
       <div className="grid grid-cols-3 gap-3 sm:gap-5 mb-8">
+
         <Stat value={completedMissions + [...verifiedIds].filter((id) => !missions.some((mission) => mission.id === id && mission.completed)).length} label="Verified" />
         <Stat value={pendingIds.size} label="Pending review" />
-        <Stat value={`${totalXp} XP`} label="Earned" />
+        <Stat value={impactScore} label="Impact" />
+
       </div>
       {error && <Card className="p-4 mb-6 border-coral-200 bg-coral-50"><p className="text-sm text-coral-700">Live verification is unavailable. Your submission is saved on this device and will retry when the service is available.</p></Card>}
       <div className="flex items-center justify-between mb-4"><h2 className="text-2xl font-extrabold text-leaf-800">Choose an action</h2><span className="text-sm text-leaf-600/60">{missions.length} missions</span></div>

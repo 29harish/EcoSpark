@@ -32,6 +32,10 @@ type ProfileRow = {
   knowledge_gaps: AssessmentResult['weakTopics'];
   assessment_completed: boolean;
   updated_at?: string;
+  impact_score?: number;
+  lessons_completed?: number;
+  missions_completed?: number;
+  learning_progress?: number;
 };
 
 function toUserProfile(row: ProfileRow): UserProfile {
@@ -50,6 +54,10 @@ function toUserProfile(row: ProfileRow): UserProfile {
     assessmentCompletedAt: row.updated_at ?? new Date().toISOString(),
     xp: Number((row as ProfileRow & { xp?: number }).xp) || 0,
     ecoCoins: Number((row as ProfileRow & { eco_coins?: number }).eco_coins) || 0,
+    impactScore: Number(row.impact_score) || 0,
+    lessonsCompleted: Number(row.lessons_completed) || 0,
+    missionsCompleted: Number(row.missions_completed) || 0,
+    learningProgress: Number(row.learning_progress) || 0,
   };
 }
 
@@ -118,4 +126,12 @@ export async function saveProgress(progress: {
     body: JSON.stringify(progress),
   });
   return response.progress as ProgressSnapshot;
+}
+
+export async function spendCoins(amount: number) {
+  const response = await apiRequest('/api/profile/spend-coins', {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
+  });
+  return response.profile;
 }

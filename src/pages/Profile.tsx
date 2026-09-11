@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export function Profile() {
-  const { level, xp, xpInCurrentLevel, xpForNextLevel, coins, streak, impactScore, gardenLevel, gardenRank, completedLessons, completedMissions, profile } = useApp();
+  const { level, xp, xpInCurrentLevel, xpForNextLevel, coins, streak, impactScore, gardenLevel, gardenRank, completedLessons, completedMissions, lessons, profile } = useApp();
 
   const xpProgress = (xpInCurrentLevel / xpForNextLevel) * 100;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -65,6 +65,12 @@ export function Profile() {
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <Card className="p-5 text-center animate-slide-up">
+          <ProgressRing progress={lessons.length ? completedLessons / lessons.length * 100 : 0} size={56} strokeWidth={6} colorFrom="#57b87c" colorTo="#1b9fb6">
+            <span className="text-xs font-extrabold text-leaf-700">{lessons.length ? Math.round(completedLessons / lessons.length * 100) : 0}%</span>
+          </ProgressRing>
+          <div className="text-sm text-leaf-600/60 font-medium mt-2">Learning Progress</div>
+        </Card>
         <Card className="p-5 text-center animate-slide-up">
           <GraduationCap className="w-7 h-7 text-leaf-500 mx-auto mb-2" />
           <div className="text-2xl font-extrabold text-leaf-700">{completedLessons}</div>

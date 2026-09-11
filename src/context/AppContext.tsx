@@ -17,7 +17,7 @@ import {
   type Mission,
 } from '@/data/mockData';
 import type { AssessmentResult } from '@/data/assessment';
-import { loadProfile, loadProgress, saveAssessmentProfile, saveProgress, saveReward, type ProgressSnapshot } from '@/lib/profileStore';
+import { loadProfile, loadProgress, saveAssessmentProfile, saveProgress, saveReward, spendCoins as spendCoinsApi, type ProgressSnapshot } from '@/lib/profileStore';
 
 export type PageId =
   | 'dashboard'
@@ -72,7 +72,7 @@ interface AppState {
   updateMissionProgress: (missionId: string, progress: number) => Promise<void>;
   addXP: (amount: number) => void;
   addCoins: (amount: number) => void;
-  spendCoins: (amount: number) => boolean;
+  spendCoins: (amount: number) => Promise<boolean>;
   assessmentCompleted: boolean;
   assessmentResult: AssessmentResult | null;
   profile: UserProfile | null;
@@ -105,6 +105,10 @@ export interface UserProfile {
   assessmentCompletedAt: string;
   xp?: number;
   ecoCoins?: number;
+  impactScore?: number;
+  lessonsCompleted?: number;
+  missionsCompleted?: number;
+  learningProgress?: number;
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -120,8 +124,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [impactScore, setImpactScore] = useState(0);
   const [gardenLevel, setGardenLevel] = useState(3);
 
-  const [lessons, setLessons] = useState<Lesson[]>(initialLessons);
-  const [missions, setMissions] = useState<Mission[]>(initialMissions);
+  const [lessons, setLessons] = useState<Lesson[]>(initialLessons.map((lesson) => ({ ...lesson, completed: false })));
+  const [missions, setMissions] = useState<Mission[]>(initialMissions.map((mission) => ({ ...mission, completed: false, progress: 0 })));
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const coinsRef = useRef(coins);
@@ -166,11 +170,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const spendCoins = useCallback((amount: number) => {
-    if (!Number.isFinite(amount) || amount <= 0 || amount > coinsRef.current) return false;
-    coinsRef.current -= Math.floor(amount);
-    setCoins(coinsRef.current);
-    return true;
+  const spendCoins = useCallback(async (amount: number) => {
+    if (!Number.isFinite(amount) || amount <= 0) return false;
+    try {
+      const savedProfile = await spendCoinsApi(Math.floor(amount));
+      setXp(Number(savedProfile.xp) || 0);
+      setCoins(Number(savedProfile.eco_coins) || 0);
+      coinsRef.current = Number(savedProfile.eco_coins) || 0;
+      setProfile((current) => current ? {
+        ...current,
+        xp: Number(savedProfile.xp) || 0,
+        ecoCoins: Number(savedProfile.eco_coins) || 0,
+        impactScore: Number(savedProfile.impact_score) || current.impactScore || 0,
+      } : current);
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
   const applyProgressSnapshot = useCallback((snapshot: ProgressSnapshot) => {
@@ -245,8 +261,8 @@ useEffect(() => {
       setLastActivityDate(null);
       setImpactScore(0);
       setGardenLevel(3);
-      setLessons(initialLessons);
-      setMissions(initialMissions);
+      setLessons(initialLessons.map((lesson) => ({ ...lesson, completed: false })));
+      setMissions(initialMissions.map((mission) => ({ ...mission, completed: false, progress: 0 })));
       setAssessmentResult(null);
       setProfile(null);
       let remoteProfile: UserProfile | null = null;

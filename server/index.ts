@@ -755,6 +755,37 @@ app.post(
         error.message
       );
 
+      app.post('/api/profile/spend-coins', requireAuth, async (req: AuthenticatedRequest, res) => {
+        const amount = (req.body as { amount?: unknown }).amount;
+        if (!isNumberInRange(amount, 1, 10000) || !Number.isInteger(amount)) {
+          return res.status(400).json({ success: false, error: 'Invalid coin amount.' });
+        }
+
+        const { data: current, error: findError } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .eq('firebase_uid', req.user!.uid)
+          .maybeSingle();
+        if (findError || !current) {
+          return res.status(404).json({ success: false, error: 'Profile not found.' });
+        }
+        const balance = Math.floor(Number(current.eco_coins) || 0);
+        if (balance < amount) {
+          return res.status(400).json({ success: false, error: 'Not enough Eco Coins.' });
+        }
+
+        const { data, error } = await supabaseAdmin
+          .from('profiles')
+          .update({ eco_coins: balance - amount, updated_at: new Date().toISOString() })
+          .eq('firebase_uid', req.user!.uid)
+          .select('*')
+          .single();
+        if (error || !data) {
+          return res.status(500).json({ success: false, error: 'Unable to spend Eco Coins.' });
+        }
+        return res.json({ success: true, profile: data });
+      });
+
       return res.status(500).json({
         success: false,
         error:
@@ -809,6 +840,7 @@ function normalizeProgress(row: {
   missions?: unknown;
   streak?: unknown;
   last_activity_date?: unknown;
+  impact_score?: unknown;
 }, xp: number, coins: number) {
   const lessons = Array.isArray(row.lessons) ? row.lessons : [];
   const missions = Array.isArray(row.missions) ? row.missions : [];
@@ -818,14 +850,14 @@ function normalizeProgress(row: {
     missions,
     streak,
     lastActivityDate: typeof row.last_activity_date === 'string' ? row.last_activity_date : null,
-    impactScore: Math.round(xp * 0.1 + coins * 0.05 + streak * 5),
+    impactScore: Number(row.impact_score) || 0,
   };
 }
 
 app.get('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => {
   const [{ data: progress, error: progressError }, { data: profile, error: profileError }] = await Promise.all([
     supabaseAdmin.from('user_progress').select('lessons, missions, streak, last_activity_date').eq('firebase_uid', req.user!.uid).maybeSingle(),
-    supabaseAdmin.from('profiles').select('xp, eco_coins').eq('firebase_uid', req.user!.uid).maybeSingle(),
+    supabaseAdmin.from('profiles').select('xp, eco_coins, impact_score').eq('firebase_uid', req.user!.uid).maybeSingle(),
   ]);
 
   if (progressError || profileError) {
@@ -835,7 +867,7 @@ app.get('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => 
 
   return res.json({
     success: true,
-    progress: normalizeProgress(progress ?? {}, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0),
+    progress: normalizeProgress({ ...(progress ?? {}), impact_score: profile?.impact_score }, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0),
   });
 });
 
@@ -856,6 +888,9 @@ app.put('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => 
     firebase_uid: req.user!.uid,
     lessons: body.lessons,
     missions: body.missions,
+    lessons_completed: (body.lessons as Array<{ completed: boolean }>).filter((lesson) => lesson.completed).length,
+    missions_completed: (body.missions as Array<{ completed: boolean }>).filter((mission) => mission.completed).length,
+    learning_progress: Math.round((body.lessons as Array<{ completed: boolean }>).filter((lesson) => lesson.completed).length / (body.lessons as unknown[]).length * 100),
     updated_at: new Date().toISOString(),
   }, { onConflict: 'firebase_uid' }).select('lessons, missions, streak, last_activity_date').single();
 
@@ -864,8 +899,8 @@ app.put('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => 
     return res.status(500).json({ success: false, error: 'Unable to save progress.' });
   }
 
-  const { data: profile } = await supabaseAdmin.from('profiles').select('xp, eco_coins').eq('firebase_uid', req.user!.uid).maybeSingle();
-  return res.json({ success: true, progress: normalizeProgress(data, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0) });
+  const { data: profile } = await supabaseAdmin.from('profiles').select('xp, eco_coins, impact_score').eq('firebase_uid', req.user!.uid).maybeSingle();
+  return res.json({ success: true, progress: normalizeProgress({ ...data, impact_score: profile?.impact_score }, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0) });
 });
 
 /* -------------------------------------------------------------------------- */
@@ -961,6 +996,71 @@ app.post(
     });
   }
 );
+
+app.post('/api/missions/submissions/:id/verify', requireAuth, async (req: AuthenticatedRequest, res) => {
+  const { data: reviewer } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('firebase_uid', req.user!.uid)
+    .maybeSingle();
+  if (!reviewer || !['teacher', 'admin'].includes(String(reviewer.role))) {
+    return res.status(403).json({ success: false, error: 'Only an authorised reviewer can verify missions.' });
+  }
+
+  const { data: submission, error: submissionError } = await supabaseAdmin
+    .from('mission_submissions')
+    .select('id, firebase_uid, mission_id, status, rewarded_at')
+    .eq('id', req.params.id)
+    .maybeSingle();
+  if (submissionError || !submission) {
+    return res.status(404).json({ success: false, error: 'Mission submission not found.' });
+  }
+  if (submission.rewarded_at) {
+    return res.status(200).json({ success: true, alreadyRewarded: true });
+  }
+
+  const { data: verified, error: verifyError } = await supabaseAdmin
+    .from('mission_submissions')
+    .update({ status: 'verified', verified_at: new Date().toISOString(), rewarded_at: new Date().toISOString() })
+    .eq('id', submission.id)
+    .is('rewarded_at', null)
+    .select('id')
+    .maybeSingle();
+  if (verifyError || !verified) {
+    return res.status(409).json({ success: false, error: 'Mission was already processed.' });
+  }
+
+  const { data: student, error: studentError } = await supabaseAdmin
+    .from('profiles')
+    .select('xp, eco_coins, impact_score, missions_completed')
+    .eq('firebase_uid', submission.firebase_uid)
+    .single();
+  if (studentError || !student) {
+    return res.status(404).json({ success: false, error: 'Student profile not found.' });
+  }
+  const missionRewards: Record<string, { xp: number; coins: number; impact: number }> = {
+    m1: { xp: 30, coins: 15, impact: 20 }, m2: { xp: 25, coins: 10, impact: 20 },
+    m3: { xp: 20, coins: 10, impact: 20 }, m4: { xp: 50, coins: 25, impact: 20 },
+    m5: { xp: 40, coins: 20, impact: 20 }, m6: { xp: 35, coins: 15, impact: 20 },
+  };
+  const reward = missionRewards[submission.mission_id] ?? { xp: 0, coins: 0, impact: 0 };
+  const { data: updatedProfile, error: rewardError } = await supabaseAdmin
+    .from('profiles')
+    .update({
+      xp: (Number(student.xp) || 0) + reward.xp,
+      eco_coins: (Number(student.eco_coins) || 0) + reward.coins,
+      impact_score: (Number(student.impact_score) || 0) + reward.impact,
+      missions_completed: (Number(student.missions_completed) || 0) + 1,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('firebase_uid', submission.firebase_uid)
+    .select('*')
+    .single();
+  if (rewardError || !updatedProfile) {
+    return res.status(500).json({ success: false, error: 'Unable to apply mission reward.' });
+  }
+  return res.json({ success: true, profile: updatedProfile });
+});
 
 /* -------------------------------------------------------------------------- */
 /* AI ECO GUIDE                                                               */

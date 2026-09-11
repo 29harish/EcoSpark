@@ -80,6 +80,7 @@ export function Sidebar() {
     xp,
     coins,
     streak,
+    impactScore,
     logout,
     user,
   } = useApp();
@@ -214,6 +215,10 @@ export function Sidebar() {
                 <span className="font-bold">
                   {streak} day
                 </span>
+              </div>
+              <div className="flex items-center gap-1 bg-white/20 rounded-full px-2.5 py-1">
+                <Leaf className="w-3.5 h-3.5" />
+                <span className="font-bold">{impactScore}</span>
               </div>
             </div>
           </div>

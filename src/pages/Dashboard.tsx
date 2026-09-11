@@ -40,6 +40,8 @@ export function Dashboard() {
     gardenLevel,
     gardenRank,
     impactScore,
+    completedLessons,
+    completedMissions,
     lessons,
     missions: userMissions,
     openLesson,
@@ -151,6 +153,21 @@ export function Dashboard() {
           {Array.from({ length: 3 }).map((_, index) => (
             <CardSkeleton key={index} />
           ))}
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+          <Card className="p-4 text-center">
+            <div className="text-xl font-black text-leaf-700">{lessons.length ? Math.round(completedLessons / lessons.length * 100) : 0}%</div>
+            <div className="text-xs font-semibold text-leaf-600/50">Learning progress</div>
+          </Card>
+          <Card className="p-4 text-center">
+            <div className="text-xl font-black text-leaf-700">{completedLessons}</div>
+            <div className="text-xs font-semibold text-leaf-600/50">Lessons completed</div>
+          </Card>
+          <Card className="p-4 text-center">
+            <div className="text-xl font-black text-leaf-700">{completedMissions}</div>
+            <div className="text-xs font-semibold text-leaf-600/50">Missions completed</div>
+          </Card>
         </div>
 
         <div className="grid lg:grid-cols-[1.65fr_1fr] gap-6">

@@ -13,7 +13,7 @@ import { useFeedback } from '@/components/ui/FeedbackToast';
 type Quiz = (typeof quizQuestions)[number];
 
 export function LearnHub() {
-  const { lessons, openLesson, completedLessons, level, xp, xpInCurrentLevel, xpForNextLevel, profile, user, navigate } = useApp();
+  const { lessons, openLesson, completedLessons, coins, level, xp, xpInCurrentLevel, xpForNextLevel, profile, user, navigate } = useApp();
   const [category, setCategory] = useState<string | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export function LearnHub() {
           <ProgressBar value={completion} gradient="from-white to-sun-200" height="h-2.5" className="mt-5" />
           <div className="flex flex-wrap items-center gap-3 mt-5 text-sm text-white/85">
             <span className="bg-white/15 rounded-full px-3 py-1">Level {level}</span>
-            <span>{xp.toLocaleString()} total XP · {xpInCurrentLevel}/{xpForNextLevel} XP to next level</span>
+            <span>{xp.toLocaleString()} XP · {coins.toLocaleString()} coins · {completedLessons} lessons · {xpInCurrentLevel}/{xpForNextLevel} XP to next level</span>
           </div>
         </GradientCard>
         <Card className="p-6 flex flex-col justify-between animate-slide-up">
