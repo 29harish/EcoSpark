@@ -932,6 +932,24 @@ app.get(
 /* LEADERBOARD                                                                */
 /* -------------------------------------------------------------------------- */
 
+type LeaderboardSort =
+  | 'xp'
+  | 'impact'
+  | 'coins'
+  | 'lessons'
+  | 'missions';
+
+const leaderboardSortFields: Record<
+  LeaderboardSort,
+  string
+> = {
+  xp: 'xp',
+  impact: 'impact_score',
+  coins: 'eco_coins',
+  lessons: 'lessons_completed',
+  missions: 'missions_completed',
+};
+
 app.get(
   '/api/leaderboard',
   requireAuth,
@@ -948,6 +966,26 @@ app.get(
       });
     }
 
+    const requestedSort = String(
+      req.query.sort || 'xp',
+    ) as LeaderboardSort;
+
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        leaderboardSortFields,
+        requestedSort,
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Invalid leaderboard ranking option.',
+      });
+    }
+
+    const primaryField =
+      leaderboardSortFields[requestedSort];
+
     try {
       const {
         data,
@@ -957,17 +995,25 @@ app.get(
         .select(
           'firebase_uid, full_name, xp, eco_coins, impact_score, lessons_completed, missions_completed',
         )
+        .order(primaryField, {
+          ascending: false,
+          nullsFirst: false,
+        })
         .order('xp', {
           ascending: false,
+          nullsFirst: false,
         })
         .order('impact_score', {
           ascending: false,
+          nullsFirst: false,
         })
         .order('missions_completed', {
           ascending: false,
+          nullsFirst: false,
         })
         .order('full_name', {
           ascending: true,
+          nullsFirst: false,
         })
         .limit(50);
 
@@ -1020,6 +1066,8 @@ app.get(
 
       return res.json({
         success: true,
+        sort: requestedSort,
+        period,
         entries,
       });
     } catch (error) {

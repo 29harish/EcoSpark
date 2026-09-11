@@ -15,11 +15,22 @@ export interface MissionSubmission {
 
 export interface ProgressSnapshot {
   lessons: Array<{ id: string; completed: boolean }>;
-  missions: Array<{ id: string; progress: number; completed: boolean }>;
+  missions: Array<{
+    id: string;
+    progress: number;
+    completed: boolean;
+  }>;
   streak: number;
   lastActivityDate: string | null;
   impactScore: number;
 }
+
+export type LeaderboardSort =
+  | 'xp'
+  | 'impact'
+  | 'coins'
+  | 'lessons'
+  | 'missions';
 
 export interface LeaderboardEntry {
   uid: string;
@@ -34,8 +45,18 @@ export interface LeaderboardEntry {
   isCurrentUser: boolean;
 }
 
-export async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
-  const response = await apiRequest('/api/leaderboard?period=all-time');
+export async function loadLeaderboard(
+  sort: LeaderboardSort = 'xp',
+): Promise<LeaderboardEntry[]> {
+  const params = new URLSearchParams({
+    period: 'all-time',
+    sort,
+  });
+
+  const response = await apiRequest(
+    `/api/leaderboard?${params.toString()}`,
+  );
+
   return (response.entries ?? []) as LeaderboardEntry[];
 }
 
@@ -50,6 +71,8 @@ type ProfileRow = {
   knowledge_gaps: AssessmentResult['weakTopics'];
   assessment_completed: boolean;
   updated_at?: string;
+  xp?: number;
+  eco_coins?: number;
   impact_score?: number;
   lessons_completed?: number;
   missions_completed?: number;
@@ -58,6 +81,7 @@ type ProfileRow = {
 
 function toUserProfile(row: ProfileRow): UserProfile {
   const knowledgeGaps = row.knowledge_gaps ?? [];
+
   return {
     uid: row.firebase_uid,
     email: row.email,
@@ -69,20 +93,30 @@ function toUserProfile(row: ProfileRow): UserProfile {
     knowledgeGaps,
     recommendedTopics: knowledgeGaps,
     assessmentCompleted: Boolean(row.assessment_completed),
-    assessmentCompletedAt: row.updated_at ?? new Date().toISOString(),
-    xp: Number((row as ProfileRow & { xp?: number }).xp) || 0,
-    ecoCoins: Number((row as ProfileRow & { eco_coins?: number }).eco_coins) || 0,
+    assessmentCompletedAt:
+      row.updated_at ?? new Date().toISOString(),
+    xp: Number(row.xp) || 0,
+    ecoCoins: Number(row.eco_coins) || 0,
     impactScore: Number(row.impact_score) || 0,
-    lessonsCompleted: Number(row.lessons_completed) || 0,
-    missionsCompleted: Number(row.missions_completed) || 0,
-    learningProgress: Number(row.learning_progress) || 0,
+    lessonsCompleted:
+      Number(row.lessons_completed) || 0,
+    missionsCompleted:
+      Number(row.missions_completed) || 0,
+    learningProgress:
+      Number(row.learning_progress) || 0,
   };
 }
 
-export async function loadProfile(uid: string): Promise<UserProfile | null> {
+export async function loadProfile(
+  uid: string,
+): Promise<UserProfile | null> {
   void uid;
+
   const response = await apiRequest('/api/profile');
-  return response.profile ? toUserProfile(response.profile as ProfileRow) : null;
+
+  return response.profile
+    ? toUserProfile(response.profile as ProfileRow)
+    : null;
 }
 
 export async function saveAssessmentProfile(
@@ -101,20 +135,39 @@ export async function saveAssessmentProfile(
       assessment_completed: true,
     }),
   });
+
   return toUserProfile(response.profile as ProfileRow);
 }
 
-export async function saveReward(activity: 'lesson' | 'quiz' | 'mission', xp: number, coins: number) {
-  const response = await apiRequest('/api/profile/reward', {
-    method: 'POST',
-    body: JSON.stringify({ activity, xp, coins }),
-  });
+export async function saveReward(
+  activity: 'lesson' | 'quiz' | 'mission',
+  xp: number,
+  coins: number,
+) {
+  const response = await apiRequest(
+    '/api/profile/reward',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        activity,
+        xp,
+        coins,
+      }),
+    },
+  );
+
   return response.profile;
 }
 
-export async function loadMissionSubmissions(): Promise<MissionSubmission[]> {
-  const response = await apiRequest('/api/missions/submissions');
-  return (response.submissions ?? []) as MissionSubmission[];
+export async function loadMissionSubmissions(): Promise<
+  MissionSubmission[]
+> {
+  const response = await apiRequest(
+    '/api/missions/submissions',
+  );
+
+  return (response.submissions ??
+    []) as MissionSubmission[];
 }
 
 export async function submitMissionProof(input: {
@@ -123,33 +176,53 @@ export async function submitMissionProof(input: {
   proofData: string;
   note: string;
 }): Promise<MissionSubmission> {
-  const response = await apiRequest('/api/missions/submissions', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
+  const response = await apiRequest(
+    '/api/missions/submissions',
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+    },
+  );
+
   return response.submission as MissionSubmission;
 }
 
 export async function loadProgress(): Promise<ProgressSnapshot> {
   const response = await apiRequest('/api/progress');
+
   return response.progress as ProgressSnapshot;
 }
 
 export async function saveProgress(progress: {
-  lessons: Array<{ id: string; completed: boolean }>;
-  missions: Array<{ id: string; progress: number; completed: boolean }>;
+  lessons: Array<{
+    id: string;
+    completed: boolean;
+  }>;
+  missions: Array<{
+    id: string;
+    progress: number;
+    completed: boolean;
+  }>;
 }): Promise<ProgressSnapshot> {
-  const response = await apiRequest('/api/progress', {
-    method: 'PUT',
-    body: JSON.stringify(progress),
-  });
+  const response = await apiRequest(
+    '/api/progress',
+    {
+      method: 'PUT',
+      body: JSON.stringify(progress),
+    },
+  );
+
   return response.progress as ProgressSnapshot;
 }
 
 export async function spendCoins(amount: number) {
-  const response = await apiRequest('/api/profile/spend-coins', {
-    method: 'POST',
-    body: JSON.stringify({ amount }),
-  });
+  const response = await apiRequest(
+    '/api/profile/spend-coins',
+    {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    },
+  );
+
   return response.profile;
 }
