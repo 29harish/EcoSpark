@@ -40,7 +40,9 @@ const configuredOrigins = (process.env.CORS_ORIGINS || '')
 
 const developmentOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
 ];
 
 function isAllowedVercelOrigin(origin: string): boolean {
@@ -64,11 +66,8 @@ function isAllowedOrigin(origin: string): boolean {
     return true;
   }
 
-  // Local development
-  if (
-    process.env.NODE_ENV !== 'production' &&
-    developmentOrigins.includes(normalizedOrigin)
-  ) {
+  // Local development clients may call the deployed API while testing.
+  if (developmentOrigins.includes(normalizedOrigin)) {
     return true;
   }
 
@@ -878,7 +877,7 @@ app.get('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => 
 
     const { data, error } = await supabaseAdmin
       .from('profiles')
-      .select('firebase_uid, full_name, xp, impact_score, eco_coins, lessons_completed, missions_completed')
+      .select('*')
       .order('xp', { ascending: false })
       .order('impact_score', { ascending: false })
       .order('missions_completed', { ascending: false })
