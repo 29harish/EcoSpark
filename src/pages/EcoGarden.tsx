@@ -107,10 +107,10 @@ export function EcoGarden() {
     window.setTimeout(() => setNotice(''), 2600);
   };
 
-  const upgrade = () => {
+  const upgrade = async () => {
     if (!selected || selected.id === 'core') return;
     const cost = selected.level * 90;
-    if (!spendCoins(cost)) {
+    if (!await spendCoins(cost)) {
       showNotice('You need more Eco Coins for this upgrade.');
       return;
     }
@@ -120,14 +120,14 @@ export function EcoGarden() {
     showNotice(`${selected.name} grew to level ${selected.level + 1}! Eco Health improved.`);
   };
 
-  const placeObject = (position: number) => {
+  const placeObject = async (position: number) => {
     if (!placing) return;
     const [x, y] = plotPositions[position];
     if (objects.some((item) => item.x === x && item.y === y)) {
       showNotice('That plot is already occupied.');
       return;
     }
-    if (!spendCoins(placing.cost)) {
+    if (!await spendCoins(placing.cost)) {
       showNotice('Complete a lesson or mission to earn more Eco Coins.');
       return;
     }

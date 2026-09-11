@@ -1,5 +1,4 @@
 import { AppProvider, useApp } from '@/context/AppContext';
-import { Assessment } from '@/pages/Assessment';
 import { FeedbackProvider } from '@/components/ui/FeedbackToast';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -17,6 +16,7 @@ import { Challenges } from '@/pages/Challenges';
 import { AIEcoGuide } from '@/pages/AIEcoGuide';
 import { Rewards } from '@/pages/Rewards';
 import { Profile } from '@/pages/Profile';
+import { Assessment } from '@/pages/Assessment';
 
 import Login from '@/pages/auth/login';
 import Signup from '@/pages/auth/signup';
@@ -53,6 +53,19 @@ if (currentPage === 'landing' && !user) {
     return <LandingPage onEnterApp={() => {}} />;
   }
 
+  // Assessment is rendered outside the app shell, so the navigation is hidden.
+  // Returning users are routed to Dashboard by AppContext/Login; the route
+  // remains mounted only long enough to show the current session's results.
+  if (currentPage === 'assessment') {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <PageTransition pageKey={currentPage}>
+          <Assessment />
+        </PageTransition>
+      </div>
+    );
+  }
+
   const pageContent = () => {
     switch (currentPage) {
       case 'dashboard':
@@ -87,9 +100,6 @@ if (currentPage === 'landing' && !user) {
 
       case 'profile':
         return <Profile />;
-      
-      case 'assessment':
-        return <Assessment />;
 
       default:
         return <Dashboard />;

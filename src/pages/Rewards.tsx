@@ -12,9 +12,9 @@ export function Rewards() {
   const [purchased, setPurchased] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
-  const handlePurchase = (id: string, cost: number, title: string) => {
+  const handlePurchase = async (id: string, cost: number, title: string) => {
     if (purchased.includes(id)) return;
-    if (spendCoins(cost)) {
+    if (await spendCoins(cost)) {
       setPurchased(prev => [...prev, id]);
       setToast(`Purchased ${title}! 🎉`);
       setTimeout(() => setToast(null), 2500);

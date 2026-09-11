@@ -4,6 +4,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
 const ECO_GUIDE_INSTRUCTIONS = `
 You are EcoSpark's AI Eco Guide.
 
@@ -49,7 +51,7 @@ export async function askEcoGuide(
   ];
 
   const response = await openai.responses.create({
-    model: 'gpt-5.6-luna',
+    model,
     instructions: ECO_GUIDE_INSTRUCTIONS,
     input,
   });

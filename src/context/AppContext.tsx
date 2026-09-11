@@ -15,6 +15,7 @@ import {
   type Lesson,
   type Mission,
 } from '@/data/mockData';
+import type { AssessmentResult } from '@/data/assessment';
 
 export type PageId =
   | 'dashboard'
@@ -27,11 +28,11 @@ export type PageId =
   | 'challenges'
   | 'landing'
   | 'ai-guide'
-  | 'assessment'
   | 'rewards'
   | 'profile'
   | 'login'
-  | 'signup';
+  | 'signup'
+  | 'assessment';
 
 interface AppState {
   // Authentication
@@ -69,6 +70,11 @@ interface AppState {
   addXP: (amount: number) => void;
   addCoins: (amount: number) => void;
   spendCoins: (amount: number) => boolean;
+  assessmentCompleted: boolean;
+  assessmentResult: AssessmentResult | null;
+  profile: UserProfile | null;
+  hasCompletedAssessment: (uid: string) => boolean;
+  completeAssessment: (result: AssessmentResult) => void;
 }
 
 const LEVEL_XP_BASE = 250;
@@ -90,6 +96,23 @@ interface PersistedState {
   gardenLevel: number;
   lessons: Lesson[];
   missions: Mission[];
+  assessmentCompleted?: boolean;
+  assessmentResult?: AssessmentResult | null;
+  profile?: UserProfile | null;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  ecoLevel: string;
+  ecoScore: number;
+  topicScores: AssessmentResult['topicScores'];
+  strengths: AssessmentResult['strengths'];
+  knowledgeGaps: AssessmentResult['weakTopics'];
+  recommendedTopics: AssessmentResult['recommendedTopics'];
+  assessmentCompleted: boolean;
+  assessmentCompletedAt: string;
 }
 
 function loadPersistedState(): Partial<PersistedState> | null {
@@ -117,6 +140,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const [lessons, setLessons] = useState<Lesson[]>(persisted?.lessons ?? initialLessons);
   const [missions, setMissions] = useState<Mission[]>(persisted?.missions ?? initialMissions);
+  const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(persisted?.assessmentResult ?? null);
+  const [profile, setProfile] = useState<UserProfile | null>(persisted?.profile ?? null);
+  const assessmentCompleted = Boolean(
+    profile?.assessmentCompleted &&
+    (!user || profile.uid === user.uid)
+  );
 
   const { level, xpInCurrentLevel, xpForNextLevel } = calculateLevel(xp);
 
@@ -203,7 +232,9 @@ useEffect(() => {
     setCurrentPage((currentPage) => {
       // Firebase restored a logged-in user after refresh
       if (firebaseUser && currentPage === 'landing') {
-        return 'dashboard';
+        const completedForUser =
+          profile?.uid === firebaseUser.uid && profile.assessmentCompleted;
+        return completedForUser ? 'dashboard' : 'assessment';
       }
 
       // User is logged out while trying to access the app
@@ -221,7 +252,7 @@ useEffect(() => {
   });
 
   return unsubscribe;
-}, []);
+}, [profile]);
 
   useEffect(() => {
     if (level !== gardenLevel) {
@@ -231,13 +262,46 @@ useEffect(() => {
 
   // Persist state to localStorage
   useEffect(() => {
-    const state: PersistedState = { xp, coins, gardenLevel, lessons, missions };
+    const state: PersistedState = {
+      xp,
+      coins,
+      gardenLevel,
+      lessons,
+      missions,
+      assessmentCompleted,
+      assessmentResult,
+      profile,
+    };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // ignore quota errors
     }
-  }, [xp, coins, gardenLevel, lessons, missions]);
+  }, [xp, coins, gardenLevel, lessons, missions, assessmentCompleted, assessmentResult, profile]);
+
+  const completeAssessment = useCallback((result: AssessmentResult) => {
+    setAssessmentResult(result);
+    if (user) {
+      setProfile({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        ecoLevel: result.knowledgeLevel,
+        ecoScore: result.overallScore,
+        topicScores: result.topicScores,
+        strengths: result.strengths,
+        knowledgeGaps: result.weakTopics,
+        recommendedTopics: result.recommendedTopics,
+        assessmentCompleted: true,
+        assessmentCompletedAt: result.completedAt,
+      });
+    }
+  }, [user]);
+
+  const hasCompletedAssessment = useCallback(
+    (uid: string) => profile?.uid === uid && profile.assessmentCompleted,
+    [profile]
+  );
 
   const logout = useCallback(async () => {
   try {
@@ -278,6 +342,11 @@ useEffect(() => {
         addXP,
         addCoins,
         spendCoins,
+        assessmentCompleted,
+        assessmentResult,
+        profile,
+        hasCompletedAssessment,
+        completeAssessment,
       }}
     >
       {children}

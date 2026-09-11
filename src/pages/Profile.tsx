@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export function Profile() {
-  const { level, xp, xpInCurrentLevel, xpForNextLevel, coins, streak, gardenLevel, gardenRank, completedLessons, completedMissions } = useApp();
+  const { level, xp, xpInCurrentLevel, xpForNextLevel, coins, streak, gardenLevel, gardenRank, completedLessons, completedMissions, profile } = useApp();
 
   const xpProgress = (xpInCurrentLevel / xpForNextLevel) * 100;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -38,8 +38,8 @@ export function Profile() {
             🐼
           </div>
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-3xl font-extrabold text-white">Eco Explorer</h2>
-            <p className="text-white/80 mt-1">Level {level} · {gardenRank}</p>
+            <h2 className="text-3xl font-extrabold text-white">{profile?.displayName || 'Eco Explorer'}</h2>
+            <p className="text-white/80 mt-1">Level {level} · {profile?.ecoLevel || gardenRank}</p>
             <div className="mt-3 flex items-center gap-3 justify-center md:justify-start">
               <div className="bg-white/20 backdrop-blur rounded-full px-3 py-1.5 text-sm font-bold text-white flex items-center gap-1.5">
                 <Zap className="w-4 h-4" /> {xp.toLocaleString()} XP

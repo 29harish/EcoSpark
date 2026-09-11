@@ -12,7 +12,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 export default function Login() {
-  const { navigate } = useApp();
+  const { navigate, hasCompletedAssessment } = useApp();
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -30,9 +30,9 @@ const handleLogin = async (e: React.FormEvent) => {
   try {
     setError('');
 
-    await signInWithEmailAndPassword(auth, email, password);
+    const credentials = await signInWithEmailAndPassword(auth, email, password);
 
-    navigate('dashboard');
+    navigate(hasCompletedAssessment(credentials.user.uid) ? 'dashboard' : 'assessment');
   } catch (error: any) {
     console.error(error);
 
