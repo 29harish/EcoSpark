@@ -869,6 +869,41 @@ app.get('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => 
     success: true,
     progress: normalizeProgress({ ...(progress ?? {}), impact_score: profile?.impact_score }, Number(profile?.xp) || 0, Number(profile?.eco_coins) || 0),
   });
+
+  app.get('/api/leaderboard', requireAuth, async (req: AuthenticatedRequest, res) => {
+    const period = req.query.period || 'all-time';
+    if (period !== 'all-time') {
+      return res.status(400).json({ success: false, error: 'Only all-time rankings are currently available.' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('firebase_uid, full_name, xp, impact_score, eco_coins, lessons_completed, missions_completed')
+      .order('xp', { ascending: false })
+      .order('impact_score', { ascending: false })
+      .order('missions_completed', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Leaderboard fetch failed:', error.message);
+      return res.status(500).json({ success: false, error: 'Unable to load the leaderboard.' });
+    }
+
+    const entries = (data ?? []).map((row, index) => ({
+      uid: row.firebase_uid,
+      name: row.full_name?.trim() || 'Eco learner',
+      avatarUrl: null,
+      xp: Number(row.xp) || 0,
+      impactScore: Number(row.impact_score) || 0,
+      ecoCoins: Number(row.eco_coins) || 0,
+      lessonsCompleted: Number(row.lessons_completed) || 0,
+      missionsCompleted: Number(row.missions_completed) || 0,
+      rank: index + 1,
+      isCurrentUser: row.firebase_uid === req.user!.uid,
+    }));
+
+    return res.json({ success: true, entries });
+  });
 });
 
 app.put('/api/progress', requireAuth, async (req: AuthenticatedRequest, res) => {

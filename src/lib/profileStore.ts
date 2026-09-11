@@ -21,6 +21,24 @@ export interface ProgressSnapshot {
   impactScore: number;
 }
 
+export interface LeaderboardEntry {
+  uid: string;
+  name: string;
+  avatarUrl: string | null;
+  xp: number;
+  impactScore: number;
+  ecoCoins: number;
+  lessonsCompleted: number;
+  missionsCompleted: number;
+  rank: number;
+  isCurrentUser: boolean;
+}
+
+export async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
+  const response = await apiRequest('/api/leaderboard?period=all-time');
+  return (response.entries ?? []) as LeaderboardEntry[];
+}
+
 type ProfileRow = {
   firebase_uid: string;
   email: string | null;
