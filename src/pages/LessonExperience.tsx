@@ -15,7 +15,6 @@ import {
   Zap,
   RotateCcw,
   Lightbulb,
-  Sprout,
 } from 'lucide-react';
 
 export function LessonExperience() {
@@ -331,9 +330,6 @@ export function LessonExperience() {
             </Button>
             <Button onClick={closeLesson} icon={<ArrowRight className="w-4 h-4" />}>
               Back to Lessons
-            </Button>
-            <Button variant="accent" onClick={() => navigate('garden')} icon={<Sprout className="w-4 h-4" />}>
-              Go to Eco Garden
             </Button>
           </div>
         </Card>

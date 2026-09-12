@@ -1431,8 +1431,6 @@ function normalizeProgress(
     last_activity_date?: unknown;
     impact_score?: unknown;
   },
-  _xp: number,
-  _coins: number,
 ) {
   const lessons =
     Array.isArray(row.lessons)
@@ -1536,22 +1534,11 @@ app.get(
       success: true,
 
       progress:
-        normalizeProgress(
-          {
-            ...(progress ?? {}),
-
-            impact_score:
-              profile?.impact_score,
-          },
-
-          Number(
-            profile?.xp,
-          ) || 0,
-
-          Number(
-            profile?.eco_coins,
-          ) || 0,
-        ),
+        normalizeProgress({
+          ...(progress ?? {}),
+          impact_score:
+            profile?.impact_score,
+        }),
     });
   },
 );
@@ -1951,13 +1938,7 @@ app.put(
               profile?.impact_score,
           },
 
-          Number(
-            profile?.xp,
-          ) || 0,
 
-          Number(
-            profile?.eco_coins,
-          ) || 0,
         ),
     });
   },

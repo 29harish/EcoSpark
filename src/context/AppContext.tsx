@@ -188,11 +188,6 @@ export function AppProvider({
 
   const [streak, setStreak] = useState(0);
 
-  const [
-    lastActivityDate,
-    setLastActivityDate,
-  ] = useState<string | null>(null);
-
   const [impactScore, setImpactScore] =
     useState(0);
 
@@ -677,10 +672,6 @@ export function AppProvider({
           snapshot.streak,
         );
 
-        setLastActivityDate(
-          snapshot.lastActivityDate,
-        );
-
         setImpactScore(
           snapshot.impactScore,
         );
@@ -964,7 +955,6 @@ export function AppProvider({
             coinsRef.current = 0;
 
             setStreak(0);
-            setLastActivityDate(null);
             setImpactScore(0);
 
             setAuthLoading(false);
@@ -992,7 +982,6 @@ export function AppProvider({
           coinsRef.current = 0;
 
           setStreak(0);
-          setLastActivityDate(null);
           setImpactScore(0);
           setGardenLevel(3);
 
@@ -1280,7 +1269,6 @@ export function AppProvider({
         coinsRef.current = 0;
 
         setStreak(0);
-        setLastActivityDate(null);
         setImpactScore(0);
 
         navigate('landing');

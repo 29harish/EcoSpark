@@ -64,10 +64,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     });
 
     navigate('assessment');
-  } catch (error: any) {
-    console.error(error);
+  } catch (error: unknown) {
+    const firebaseError = error as { code?: string };
+    console.error(firebaseError);
 
-    switch (error.code) {
+    switch (firebaseError.code) {
       case 'auth/email-already-in-use':
         setError('An account with this email already exists.');
         break;

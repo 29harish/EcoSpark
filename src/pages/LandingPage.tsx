@@ -1,9 +1,7 @@
 import { Button } from '@/components/ui/Button';
-import { Card, GradientCard } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { FloatingLeaves } from '@/components/decorations/FloatingLeaves';
-import { categories } from '@/data/mockData';
 import { useApp } from '@/context/AppContext';
 import { useEffect, useState } from 'react';
 import {
@@ -16,22 +14,12 @@ import {
   Trophy,
   Flame,
   Lightbulb,
-  Thermometer,
   Coins,
-  Zap,
-  Heart,
   Globe,
-  Recycle,
-  Droplets,
   BookOpen,
   ClipboardCheck,
-  Footprints,
   Award,
   TreePine,
-  Bird,
-  Wind,
-  Sun,
-  Star,
   TrendingUp,
   Users,
   Instagram,

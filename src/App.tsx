@@ -10,7 +10,6 @@ import { LearnHub } from '@/pages/LearnHub';
 import { LessonExperience } from '@/pages/LessonExperience';
 
 import { Missions } from '@/pages/Missions';
-import { EcoGarden } from '@/pages/EcoGarden';
 import { Leaderboard } from '@/pages/Leaderboard';
 import { AIEcoGuide } from '@/pages/AIEcoGuide';
 import { Rewards } from '@/pages/Rewards';
@@ -21,7 +20,7 @@ import Login from '@/pages/auth/login';
 import Signup from '@/pages/auth/signup';
 
 function AppContent() {
-  const { currentPage, user, authLoading } = useApp();
+  const { currentPage, user, authLoading, navigate } = useApp();
 
   // Wait until Firebase tells us whether a user is logged in.
   if (authLoading) {
@@ -80,7 +79,28 @@ if (currentPage === 'landing' && !user) {
         return <Missions />;
 
       case 'garden':
-        return <EcoGarden />;
+        return (
+          <div className="min-h-screen p-6 md:p-10">
+            <div className="mx-auto max-w-xl rounded-[32px] border border-leaf-100 bg-white/80 p-8 text-center shadow-soft backdrop-blur-sm">
+              <div className="mb-4 text-5xl">🚧</div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-leaf-500">
+                Coming soon
+              </p>
+              <h1 className="mt-3 text-3xl font-black text-leaf-800">
+                Eco Garden
+              </h1>
+              <p className="mt-3 text-base text-leaf-600/70">
+                This page is currently under development.
+              </p>
+              <button
+                onClick={() => navigate('dashboard')}
+                className="mt-6 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-leaf-500 to-lagoon-500 px-5 py-3 text-sm font-extrabold text-white shadow-soft transition hover:opacity-95"
+              >
+                Back to dashboard
+              </button>
+            </div>
+          </div>
+        );
 
       case 'leaderboard':
         return <Leaderboard />;

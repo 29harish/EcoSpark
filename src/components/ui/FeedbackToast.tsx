@@ -54,10 +54,12 @@ function Toast({ toast }: { toast: ToastItem }) {
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
+  const baseClassName = `flex items-center gap-2 rounded-2xl px-5 py-3 shadow-soft-lg font-bold transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`;
+
   if (toast.type === 'xp') {
     return (
       <div
-        className="flex items-center gap-2 bg-gradient-to-r from-leaf-500 to-lagoon-500 text-white rounded-2xl px-5 py-3 shadow-soft-lg font-bold animate-toast-rise"
+        className={`${baseClassName} bg-gradient-to-r from-leaf-500 to-lagoon-500 text-white animate-toast-rise`}
       >
         <Zap className="w-5 h-5" />
         <span className="text-lg">+{toast.amount} XP</span>
@@ -68,7 +70,7 @@ function Toast({ toast }: { toast: ToastItem }) {
   if (toast.type === 'coin') {
     return (
       <div
-        className="flex items-center gap-2 bg-gradient-to-r from-sun-400 to-sun-500 text-white rounded-2xl px-5 py-3 shadow-soft-lg font-bold animate-toast-rise"
+        className={`${baseClassName} bg-gradient-to-r from-sun-400 to-sun-500 text-white animate-toast-rise`}
       >
         <Coins className="w-5 h-5" />
         <span className="text-lg">+{toast.amount} Coins</span>
@@ -78,7 +80,7 @@ function Toast({ toast }: { toast: ToastItem }) {
 
   return (
     <div
-      className="flex items-center gap-2 bg-leaf-700 text-white rounded-2xl px-5 py-3 shadow-soft-lg font-bold animate-toast-rise"
+      className={`${baseClassName} bg-leaf-700 text-white animate-toast-rise`}
     >
       {toast.message}
     </div>

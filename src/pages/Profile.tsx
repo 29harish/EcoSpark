@@ -5,12 +5,9 @@ import {
   Coins,
   Flame,
   GraduationCap,
-  Lock,
-  Medal,
   Sprout,
   Target,
   TreePine,
-  Trophy,
   User,
   Zap,
 } from 'lucide-react';
@@ -20,10 +17,6 @@ import { Badge } from '@/components/ui/Badge';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useApp } from '@/context/AppContext';
-import {
-  achievements,
-  gardenRanks,
-} from '@/data/mockData';
 
 export function Profile() {
   const {
@@ -66,11 +59,6 @@ export function Profile() {
           ),
         )
       : 0;
-
-  const unlockedAchievements =
-    achievements.filter(
-      (achievement) => achievement.unlocked,
-    );
 
   const displayName =
     profile?.displayName?.trim() ||

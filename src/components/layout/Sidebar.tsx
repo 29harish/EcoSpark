@@ -2,13 +2,12 @@ import {
   LayoutDashboard,
   GraduationCap,
   Target,
-  Sprout,
   Trophy,
-  Swords,
   Bot,
   Gift,
   User,
   Leaf,
+  Sprout,
   Menu,
   X,
   Flame,
@@ -39,11 +38,6 @@ const navItems: NavItem[] = [
     id: 'missions',
     label: 'Missions',
     icon: <Target className="w-5 h-5" />,
-  },
-  {
-    id: 'garden',
-    label: 'Eco Garden',
-    icon: <Sprout className="w-5 h-5" />,
   },
   {
     id: 'leaderboard',
@@ -92,9 +86,6 @@ export function Sidebar() {
     user?.displayName?.trim() ||
     user?.email?.split('@')[0] ||
     'Student';
-
-  // Get first letter for avatar
-  const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <>
