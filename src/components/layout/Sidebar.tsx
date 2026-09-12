@@ -51,11 +51,6 @@ const navItems: NavItem[] = [
     icon: <Trophy className="w-5 h-5" />,
   },
   {
-    id: 'challenges',
-    label: 'Challenges',
-    icon: <Swords className="w-5 h-5" />,
-  },
-  {
     id: 'ai-guide',
     label: 'AI Eco Guide',
     icon: <Bot className="w-5 h-5" />,

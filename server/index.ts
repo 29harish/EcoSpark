@@ -1,11 +1,20 @@
 import 'dotenv/config';
 
-import express, { type Response, type NextFunction } from 'express';
+import express, {
+  type Response,
+  type NextFunction,
+} from 'express';
+
 import cors from 'cors';
 
 import { askEcoGuide, type ChatMessage } from './ai';
+
 import { supabaseAdmin } from './db';
-import { AuthenticatedRequest, requireAuth } from './authMiddleware';
+
+import {
+  AuthenticatedRequest,
+  requireAuth,
+} from './authMiddleware';
 
 const app = express();
 
@@ -32,12 +41,57 @@ const PROFILE_TOPICS = [
 ] as const;
 
 /* -------------------------------------------------------------------------- */
-/* CORS                                                                       */
+/* SECURE REWARD CATALOG                                                      */
 /* -------------------------------------------------------------------------- */
 
-const configuredOrigins = (process.env.CORS_ORIGINS || '')
+const REWARD_CATALOG = {
+  r1: {
+    title: 'Eco Hero Badge',
+    cost: 100,
+  },
+  r2: {
+    title: 'Custom Avatar Frame',
+    cost: 250,
+  },
+  r3: {
+    title: 'Garden Theme: Sunset',
+    cost: 300,
+  },
+  r4: {
+    title: 'Reusable Water Bottle',
+    cost: 500,
+  },
+  r5: {
+    title: 'Seed Kit',
+    cost: 750,
+  },
+  r6: {
+    title: 'Eco T-Shirt',
+    cost: 1000,
+  },
+  r7: {
+    title: 'Tree Planted in Your Name',
+    cost: 1500,
+  },
+  r8: {
+    title: 'Golden Garden',
+    cost: 2000,
+  },
+} as const;
+
+type RewardId = keyof typeof REWARD_CATALOG;
+
+/* -------------------------------------------------------------------------- */
+/* CORS                                                                      */
+/* -------------------------------------------------------------------------- */
+
+const configuredOrigins = (
+  process.env.CORS_ORIGINS || ''
+)
   .split(',')
-  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .map((origin) =>
+    origin.trim().replace(/\/$/, ''),
+  )
   .filter(Boolean);
 
 const developmentOrigins = [
@@ -47,7 +101,9 @@ const developmentOrigins = [
   'http://127.0.0.1:5174',
 ];
 
-function isAllowedVercelOrigin(origin: string): boolean {
+function isAllowedVercelOrigin(
+  origin: string,
+): boolean {
   try {
     const url = new URL(origin);
 
@@ -60,18 +116,35 @@ function isAllowedVercelOrigin(origin: string): boolean {
   }
 }
 
-function isAllowedOrigin(origin: string): boolean {
-  const normalizedOrigin = origin.replace(/\/$/, '');
+function isAllowedOrigin(
+  origin: string,
+): boolean {
+  const normalizedOrigin = origin.replace(
+    /\/$/,
+    '',
+  );
 
-  if (configuredOrigins.includes(normalizedOrigin)) {
+  if (
+    configuredOrigins.includes(
+      normalizedOrigin,
+    )
+  ) {
     return true;
   }
 
-  if (developmentOrigins.includes(normalizedOrigin)) {
+  if (
+    developmentOrigins.includes(
+      normalizedOrigin,
+    )
+  ) {
     return true;
   }
 
-  if (isAllowedVercelOrigin(normalizedOrigin)) {
+  if (
+    isAllowedVercelOrigin(
+      normalizedOrigin,
+    )
+  ) {
     return true;
   }
 
@@ -100,13 +173,23 @@ app.use(
         return;
       }
 
-      console.error('Blocked CORS origin:', origin);
-      callback(new Error('Origin is not allowed.'));
+      console.error(
+        'Blocked CORS origin:',
+        origin,
+      );
+
+      callback(
+        new Error('Origin is not allowed.'),
+      );
     },
   }),
 );
 
-app.use(express.json({ limit: '32kb' }));
+app.use(
+  express.json({
+    limit: '32kb',
+  }),
+);
 
 /* -------------------------------------------------------------------------- */
 /* AI RATE LIMITING                                                           */
@@ -117,7 +200,8 @@ type RateLimitEntry = {
   resetAt: number;
 };
 
-const aiRateLimits = new Map<string, RateLimitEntry>();
+const aiRateLimits =
+  new Map<string, RateLimitEntry>();
 
 const AI_RATE_LIMIT = 20;
 const AI_RATE_WINDOW_MS = 60_000;
@@ -127,36 +211,50 @@ function aiRateLimit(
   res: Response,
   next: NextFunction,
 ) {
-  const key = req.user?.uid || req.ip || 'unknown';
+  const key =
+    req.user?.uid ||
+    req.ip ||
+    'unknown';
+
   const now = Date.now();
 
   const entry = aiRateLimits.get(key);
 
-  if (!entry || entry.resetAt <= now) {
+  if (
+    !entry ||
+    entry.resetAt <= now
+  ) {
     aiRateLimits.set(key, {
       count: 1,
-      resetAt: now + AI_RATE_WINDOW_MS,
+      resetAt:
+        now + AI_RATE_WINDOW_MS,
     });
 
     next();
     return;
   }
 
-  if (entry.count >= AI_RATE_LIMIT) {
+  if (
+    entry.count >= AI_RATE_LIMIT
+  ) {
     res.setHeader(
       'Retry-After',
-      Math.ceil((entry.resetAt - now) / 1000),
+      Math.ceil(
+        (entry.resetAt - now) / 1000,
+      ),
     );
 
     res.status(429).json({
       success: false,
-      error: 'Too many AI requests. Please try again shortly.',
+      error:
+        'Too many AI requests. Please try again shortly.',
     });
 
     return;
   }
 
   entry.count += 1;
+
   next();
 }
 
@@ -164,7 +262,9 @@ function aiRateLimit(
 /* VALIDATION HELPERS                                                         */
 /* -------------------------------------------------------------------------- */
 
-function isStringArray(value: unknown): value is string[] {
+function isStringArray(
+  value: unknown,
+): value is string[] {
   return (
     Array.isArray(value) &&
     value.length <= MAX_ARRAY_ITEMS &&
@@ -200,12 +300,13 @@ function isTopicScores(
     return false;
   }
 
-  const scores = value as Record<string, unknown>;
+  const scores =
+    value as Record<string, unknown>;
 
   return Object.keys(scores).every(
     (topic) =>
       PROFILE_TOPICS.includes(
-        topic as typeof PROFILE_TOPICS[number],
+        topic as (typeof PROFILE_TOPICS)[number],
       ) &&
       isNumberInRange(
         scores[topic],
@@ -221,7 +322,10 @@ function validateChatInput(
   message: string;
   history: ChatMessage[];
 } | null {
-  if (!body || typeof body !== 'object') {
+  if (
+    !body ||
+    typeof body !== 'object'
+  ) {
     return null;
   }
 
@@ -233,12 +337,14 @@ function validateChatInput(
   if (
     typeof input.message !== 'string' ||
     input.message.trim().length === 0 ||
-    input.message.length > MAX_MESSAGE_LENGTH
+    input.message.length >
+      MAX_MESSAGE_LENGTH
   ) {
     return null;
   }
 
-  const history = input.history ?? [];
+  const history =
+    input.history ?? [];
 
   if (
     !Array.isArray(history) ||
@@ -249,7 +355,10 @@ function validateChatInput(
 
   if (
     !history.every((item) => {
-      if (!item || typeof item !== 'object') {
+      if (
+        !item ||
+        typeof item !== 'object'
+      ) {
         return false;
       }
 
@@ -259,10 +368,14 @@ function validateChatInput(
       };
 
       return (
-        (message.role === 'user' ||
-          message.role === 'assistant') &&
-        typeof message.content === 'string' &&
-        message.content.length <= MAX_MESSAGE_LENGTH
+        (
+          message.role === 'user' ||
+          message.role === 'assistant'
+        ) &&
+        typeof message.content ===
+          'string' &&
+        message.content.length <=
+          MAX_MESSAGE_LENGTH
       );
     })
   ) {
@@ -271,7 +384,8 @@ function validateChatInput(
 
   return {
     message: input.message.trim(),
-    history: history as ChatMessage[],
+    history:
+      history as ChatMessage[],
   };
 }
 
@@ -279,12 +393,16 @@ function validateChatInput(
 /* HEALTH                                                                     */
 /* -------------------------------------------------------------------------- */
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    success: true,
-    message: 'EcoSpark AI backend is running.',
-  });
-});
+app.get(
+  '/api/health',
+  (_req, res) => {
+    res.json({
+      success: true,
+      message:
+        'EcoSpark AI backend is running.',
+    });
+  },
+);
 
 /* -------------------------------------------------------------------------- */
 /* PROFILE - GET                                                              */
@@ -293,12 +411,21 @@ app.get('/api/health', (_req, res) => {
 app.get(
   '/api/profile',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
     try {
-      const { data, error } = await supabaseAdmin
+      const {
+        data,
+        error,
+      } = await supabaseAdmin
         .from('profiles')
         .select('*')
-        .eq('firebase_uid', req.user!.uid)
+        .eq(
+          'firebase_uid',
+          req.user!.uid,
+        )
         .maybeSingle();
 
       if (error) {
@@ -309,7 +436,8 @@ app.get(
 
         return res.status(500).json({
           success: false,
-          error: 'Unable to fetch profile.',
+          error:
+            'Unable to fetch profile.',
         });
       }
 
@@ -327,7 +455,8 @@ app.get(
 
       return res.status(500).json({
         success: false,
-        error: 'Unable to fetch profile.',
+        error:
+          'Unable to fetch profile.',
       });
     }
   },
@@ -340,9 +469,16 @@ app.get(
 app.put(
   '/api/profile',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
     try {
-      const body = req.body as Record<string, unknown>;
+      const body =
+        req.body as Record<
+          string,
+          unknown
+        >;
 
       const protectedFields = [
         'xp',
@@ -377,19 +513,27 @@ app.put(
 
       if (
         Object.keys(body).some(
-          (field) => !allowedFields.includes(field),
+          (field) =>
+            !allowedFields.includes(
+              field,
+            ),
         )
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Unsupported profile field.',
+          error:
+            'Unsupported profile field.',
         });
       }
 
       if (
-        body.full_name !== undefined &&
-        (typeof body.full_name !== 'string' ||
-          body.full_name.length > 120)
+        body.full_name !==
+          undefined &&
+        (
+          typeof body.full_name !==
+            'string' ||
+          body.full_name.length > 120
+        )
       ) {
         return res.status(400).json({
           success: false,
@@ -398,18 +542,24 @@ app.put(
       }
 
       if (
-        body.eco_level !== undefined &&
-        (typeof body.eco_level !== 'string' ||
-          body.eco_level.length > 80)
+        body.eco_level !==
+          undefined &&
+        (
+          typeof body.eco_level !==
+            'string' ||
+          body.eco_level.length > 80
+        )
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid eco level.',
+          error:
+            'Invalid eco level.',
         });
       }
 
       if (
-        body.eco_score !== undefined &&
+        body.eco_score !==
+          undefined &&
         !isNumberInRange(
           body.eco_score,
           0,
@@ -418,7 +568,8 @@ app.put(
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid eco score.',
+          error:
+            'Invalid eco score.',
         });
       }
 
@@ -429,8 +580,11 @@ app.put(
         'knowledge_gaps',
       ]) {
         if (
-          body[field] !== undefined &&
-          !isStringArray(body[field])
+          body[field] !==
+            undefined &&
+          !isStringArray(
+            body[field],
+          )
         ) {
           return res.status(400).json({
             success: false,
@@ -440,33 +594,46 @@ app.put(
       }
 
       if (
-        body.assessment_completed !== undefined &&
-        typeof body.assessment_completed !== 'boolean'
+        body.assessment_completed !==
+          undefined &&
+        typeof body.assessment_completed !==
+          'boolean'
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid assessment status.',
+          error:
+            'Invalid assessment status.',
         });
       }
 
       if (
-        body.topic_scores !== undefined &&
-        !isTopicScores(body.topic_scores)
+        body.topic_scores !==
+          undefined &&
+        !isTopicScores(
+          body.topic_scores,
+        )
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid topic scores.',
+          error:
+            'Invalid topic scores.',
         });
       }
 
-      const updates: Record<string, unknown> = {
-        updated_at: new Date().toISOString(),
-        email: req.user!.email ?? null,
+      const updates: Record<
+        string,
+        unknown
+      > = {
+        updated_at:
+          new Date().toISOString(),
+        email:
+          req.user!.email ?? null,
       };
 
       for (const field of allowedFields) {
         if (field in body) {
-          updates[field] = body[field];
+          updates[field] =
+            body[field];
         }
       }
 
@@ -476,7 +643,10 @@ app.put(
       } = await supabaseAdmin
         .from('profiles')
         .select('id')
-        .eq('firebase_uid', req.user!.uid)
+        .eq(
+          'firebase_uid',
+          req.user!.uid,
+        )
         .maybeSingle();
 
       if (findError) {
@@ -487,7 +657,8 @@ app.put(
 
         return res.status(500).json({
           success: false,
-          error: 'Unable to save profile.',
+          error:
+            'Unable to save profile.',
         });
       }
 
@@ -495,18 +666,25 @@ app.put(
         ? supabaseAdmin
             .from('profiles')
             .update(updates)
-            .eq('id', existingProfile.id)
+            .eq(
+              'id',
+              existingProfile.id,
+            )
         : supabaseAdmin
             .from('profiles')
             .insert({
-              firebase_uid: req.user!.uid,
+              firebase_uid:
+                req.user!.uid,
               role: 'student',
               xp: 0,
               eco_coins: 0,
               ...updates,
             });
 
-      const { data, error } = await query
+      const {
+        data,
+        error,
+      } = await query
         .select('*')
         .single();
 
@@ -518,7 +696,8 @@ app.put(
 
         return res.status(500).json({
           success: false,
-          error: 'Unable to save profile.',
+          error:
+            'Unable to save profile.',
         });
       }
 
@@ -536,7 +715,8 @@ app.put(
 
       return res.status(500).json({
         success: false,
-        error: 'Unable to save profile.',
+        error:
+          'Unable to save profile.',
       });
     }
   },
@@ -549,15 +729,25 @@ app.put(
 app.post(
   '/api/profile/reset-progress',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
-    const { data, error } = await supabaseAdmin
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
+    const {
+      data,
+      error,
+    } = await supabaseAdmin
       .from('profiles')
       .update({
         xp: 0,
         eco_coins: 0,
-        updated_at: new Date().toISOString(),
+        updated_at:
+          new Date().toISOString(),
       })
-      .eq('firebase_uid', req.user!.uid)
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
       .select('*')
       .maybeSingle();
 
@@ -569,7 +759,8 @@ app.post(
 
       return res.status(500).json({
         success: false,
-        error: 'Unable to reset progress.',
+        error:
+          'Unable to reset progress.',
       });
     }
 
@@ -581,20 +772,25 @@ app.post(
 );
 
 /* -------------------------------------------------------------------------- */
-/* REWARD                                                                     */
+/* REWARD - EARN                                                              */
 /* -------------------------------------------------------------------------- */
 
 app.post(
   '/api/profile/reward',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
-    const body = req.body as {
-      activity?: unknown;
-      xp?: unknown;
-      coins?: unknown;
-    };
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
+    const body =
+      req.body as {
+        activity?: unknown;
+        xp?: unknown;
+        coins?: unknown;
+      };
 
-    const activity = body.activity;
+    const activity =
+      body.activity;
 
     const limits =
       activity === 'lesson' ||
@@ -615,11 +811,15 @@ app.post(
         0,
         limits.maxCoins,
       ) ||
-      (body.xp === 0 && body.coins === 0)
+      (
+        body.xp === 0 &&
+        body.coins === 0
+      )
     ) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid activity reward.',
+        error:
+          'Invalid activity reward.',
       });
     }
 
@@ -628,31 +828,57 @@ app.post(
       error: findError,
     } = await supabaseAdmin
       .from('profiles')
-      .select('xp, eco_coins')
-      .eq('firebase_uid', req.user!.uid)
+      .select(
+        'xp, eco_coins',
+      )
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
       .maybeSingle();
 
-    if (findError || !current) {
+    if (
+      findError ||
+      !current
+    ) {
       return res.status(404).json({
         success: false,
-        error: 'Profile not found.',
+        error:
+          'Profile not found.',
       });
     }
 
-    const { data, error } = await supabaseAdmin
+    const {
+      data,
+      error,
+    } = await supabaseAdmin
       .from('profiles')
       .update({
         xp:
-          Math.floor(Number(current.xp) || 0) +
-          Math.floor(body.xp as number),
+          Math.floor(
+            Number(current.xp) || 0,
+          ) +
+          Math.floor(
+            body.xp as number,
+          ),
 
         eco_coins:
-          Math.floor(Number(current.eco_coins) || 0) +
-          Math.floor(body.coins as number),
+          Math.floor(
+            Number(
+              current.eco_coins,
+            ) || 0,
+          ) +
+          Math.floor(
+            body.coins as number,
+          ),
 
-        updated_at: new Date().toISOString(),
+        updated_at:
+          new Date().toISOString(),
       })
-      .eq('firebase_uid', req.user!.uid)
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
       .select('*')
       .single();
 
@@ -664,62 +890,89 @@ app.post(
 
       return res.status(500).json({
         success: false,
-        error: 'Unable to save reward.',
+        error:
+          'Unable to save reward.',
       });
     }
 
-    const today = new Date()
-      .toISOString()
-      .slice(0, 10);
+    const today =
+      new Date()
+        .toISOString()
+        .slice(0, 10);
 
-    const { data: activityProgress } =
-      await supabaseAdmin
-        .from('user_progress')
-        .select(
-          'lessons, missions, streak, last_activity_date',
-        )
-        .eq('firebase_uid', req.user!.uid)
-        .maybeSingle();
+    const {
+      data: activityProgress,
+    } = await supabaseAdmin
+      .from('user_progress')
+      .select(
+        'lessons, missions, streak, last_activity_date',
+      )
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
+      .maybeSingle();
 
     const previousDate =
       activityProgress?.last_activity_date;
 
-    const yesterday = new Date();
+    const yesterday =
+      new Date();
 
     yesterday.setUTCDate(
       yesterday.getUTCDate() - 1,
     );
 
-    const yesterdayValue = yesterday
-      .toISOString()
-      .slice(0, 10);
+    const yesterdayValue =
+      yesterday
+        .toISOString()
+        .slice(0, 10);
 
     const nextStreak =
       previousDate === today
-        ? Number(activityProgress?.streak) || 0
-        : previousDate === yesterdayValue
-          ? (Number(activityProgress?.streak) || 0) + 1
+        ? Number(
+            activityProgress?.streak,
+          ) || 0
+        : previousDate ===
+            yesterdayValue
+          ? (
+              Number(
+                activityProgress?.streak,
+              ) || 0
+            ) + 1
           : 1;
 
-    const { error: activityError } =
-      await supabaseAdmin
-        .from('user_progress')
-        .upsert(
-          {
-            firebase_uid: req.user!.uid,
-            lessons:
-              activityProgress?.lessons ?? [],
-            missions:
-              activityProgress?.missions ?? [],
-            streak: nextStreak,
-            last_activity_date: today,
-            updated_at:
-              new Date().toISOString(),
-          },
-          {
-            onConflict: 'firebase_uid',
-          },
-        );
+    const {
+      error: activityError,
+    } = await supabaseAdmin
+      .from('user_progress')
+      .upsert(
+        {
+          firebase_uid:
+            req.user!.uid,
+
+          lessons:
+            activityProgress?.lessons ??
+            [],
+
+          missions:
+            activityProgress?.missions ??
+            [],
+
+          streak:
+            nextStreak,
+
+          last_activity_date:
+            today,
+
+          updated_at:
+            new Date().toISOString(),
+        },
+        {
+          onConflict:
+            'firebase_uid',
+        },
+      );
 
     if (activityError) {
       console.error(
@@ -742,13 +995,332 @@ app.post(
 );
 
 /* -------------------------------------------------------------------------- */
+/* REWARDS - SECURE REDEEM                                                    */
+/* -------------------------------------------------------------------------- */
+
+app.post(
+  '/api/rewards/redeem',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
+    const body =
+      req.body as {
+        rewardId?: unknown;
+      };
+
+    /*
+     * IMPORTANT:
+     *
+     * The frontend is allowed to send ONLY rewardId.
+     *
+     * We intentionally DO NOT accept:
+     * - title
+     * - cost
+     * - coins
+     *
+     * The backend determines those values from
+     * REWARD_CATALOG.
+     */
+
+    if (
+      typeof body.rewardId !==
+      'string'
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Invalid reward ID.',
+      });
+    }
+
+    const rewardId =
+      body.rewardId as RewardId;
+
+    if (
+      !Object.prototype.hasOwnProperty.call(
+        REWARD_CATALOG,
+        rewardId,
+      )
+    ) {
+      return res.status(404).json({
+        success: false,
+        error:
+          'Reward not found.',
+      });
+    }
+
+    const reward =
+      REWARD_CATALOG[rewardId];
+
+    try {
+      /*
+       * The Supabase RPC performs:
+       *
+       * 1. Lock profile row
+       * 2. Check profile exists
+       * 3. Check duplicate redemption
+       * 4. Check coin balance
+       * 5. Deduct coins
+       * 6. Insert redemption record
+       *
+       * All of this happens atomically.
+       */
+
+      const {
+        data: redemption,
+        error: redemptionError,
+      } = await supabaseAdmin.rpc(
+        'redeem_reward',
+        {
+          p_firebase_uid:
+            req.user!.uid,
+
+          p_reward_id:
+            rewardId,
+
+          p_reward_title:
+            reward.title,
+
+          p_coins_spent:
+            reward.cost,
+        },
+      );
+
+      if (redemptionError) {
+        const message =
+          redemptionError.message ||
+          '';
+
+        console.error(
+          'Reward redemption RPC failed:',
+          message,
+        );
+
+        if (
+          message.includes(
+            'PROFILE_NOT_FOUND',
+          )
+        ) {
+          return res.status(404).json({
+            success: false,
+            error:
+              'Profile not found.',
+          });
+        }
+
+        if (
+          message.includes(
+            'ALREADY_REDEEMED',
+          )
+        ) {
+          return res.status(409).json({
+            success: false,
+            error:
+              'You have already redeemed this reward.',
+          });
+        }
+
+        if (
+          message.includes(
+            'INSUFFICIENT_COINS',
+          )
+        ) {
+          return res.status(400).json({
+            success: false,
+            error:
+              'Not enough Eco Coins.',
+          });
+        }
+
+        return res.status(500).json({
+          success: false,
+          error:
+            'Unable to redeem reward.',
+        });
+      }
+
+      /*
+       * Fetch the complete updated profile
+       * so the frontend receives the authoritative
+       * balance and all other profile fields.
+       */
+
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq(
+          'firebase_uid',
+          req.user!.uid,
+        )
+        .single();
+
+      if (
+        profileError ||
+        !profile
+      ) {
+        console.error(
+          'Updated profile fetch after redemption failed:',
+          profileError?.message,
+        );
+
+        return res.status(500).json({
+          success: false,
+          error:
+            'Reward was redeemed, but the updated profile could not be loaded.',
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+
+        redemption: {
+          id:
+            redemption?.redemption_id ??
+            null,
+
+          rewardId,
+
+          rewardTitle:
+            reward.title,
+
+          coinsSpent:
+            reward.cost,
+
+          ecoCoins:
+            Number(
+              redemption?.eco_coins,
+            ) ||
+            Number(
+              profile.eco_coins,
+            ) ||
+            0,
+        },
+
+        profile,
+      });
+    } catch (error) {
+      console.error(
+        'Reward redemption failed:',
+        error instanceof Error
+          ? error.message
+          : 'unknown error',
+      );
+
+      return res.status(500).json({
+        success: false,
+        error:
+          'Unable to redeem reward.',
+      });
+    }
+  },
+);
+
+/* -------------------------------------------------------------------------- */
+/* REWARDS - REDEMPTION HISTORY                                               */
+/* -------------------------------------------------------------------------- */
+
+app.get(
+  '/api/rewards/redemptions',
+  requireAuth,
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
+    try {
+      const {
+        data,
+        error,
+      } = await supabaseAdmin
+        .from(
+          'reward_redemptions',
+        )
+        .select(
+          'id, reward_id, reward_title, coins_spent, status, redeemed_at',
+        )
+        .eq(
+          'firebase_uid',
+          req.user!.uid,
+        )
+        .order(
+          'redeemed_at',
+          {
+            ascending: false,
+          },
+        );
+
+      if (error) {
+        console.error(
+          'Reward redemption history fetch failed:',
+          error.message,
+        );
+
+        return res.status(500).json({
+          success: false,
+          error:
+            'Unable to load redemption history.',
+        });
+      }
+
+      return res.json({
+        success: true,
+
+        redemptions:
+          (data ?? []).map(
+            (item) => ({
+              id: item.id,
+
+              rewardId:
+                item.reward_id,
+
+              rewardTitle:
+                item.reward_title,
+
+              coinsSpent:
+                Number(
+                  item.coins_spent,
+                ) || 0,
+
+              status:
+                item.status,
+
+              redeemedAt:
+                item.redeemed_at,
+            }),
+          ),
+      });
+    } catch (error) {
+      console.error(
+        'Redemption history API failed:',
+        error instanceof Error
+          ? error.message
+          : 'unknown error',
+      );
+
+      return res.status(500).json({
+        success: false,
+        error:
+          'Unable to load redemption history.',
+      });
+    }
+  },
+);
+
+/* -------------------------------------------------------------------------- */
 /* SPEND ECO COINS                                                            */
 /* -------------------------------------------------------------------------- */
 
 app.post(
   '/api/profile/spend-coins',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
     const amount = (
       req.body as {
         amount?: unknown;
@@ -765,7 +1337,8 @@ app.post(
     ) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid coin amount.',
+        error:
+          'Invalid coin amount.',
       });
     }
 
@@ -775,25 +1348,37 @@ app.post(
     } = await supabaseAdmin
       .from('profiles')
       .select('*')
-      .eq('firebase_uid', req.user!.uid)
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
       .maybeSingle();
 
-    if (findError || !current) {
+    if (
+      findError ||
+      !current
+    ) {
       return res.status(404).json({
         success: false,
-        error: 'Profile not found.',
+        error:
+          'Profile not found.',
       });
     }
 
     const balance =
       Math.floor(
-        Number(current.eco_coins) || 0,
+        Number(
+          current.eco_coins,
+        ) || 0,
       );
 
-    if (balance < amount) {
+    if (
+      balance < amount
+    ) {
       return res.status(400).json({
         success: false,
-        error: 'Not enough Eco Coins.',
+        error:
+          'Not enough Eco Coins.',
       });
     }
 
@@ -803,17 +1388,27 @@ app.post(
     } = await supabaseAdmin
       .from('profiles')
       .update({
-        eco_coins: balance - amount,
-        updated_at: new Date().toISOString(),
+        eco_coins:
+          balance - amount,
+
+        updated_at:
+          new Date().toISOString(),
       })
-      .eq('firebase_uid', req.user!.uid)
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
       .select('*')
       .single();
 
-    if (error || !data) {
+    if (
+      error ||
+      !data
+    ) {
       return res.status(500).json({
         success: false,
-        error: 'Unable to spend Eco Coins.',
+        error:
+          'Unable to spend Eco Coins.',
       });
     }
 
@@ -839,29 +1434,40 @@ function normalizeProgress(
   _xp: number,
   _coins: number,
 ) {
-  const lessons = Array.isArray(row.lessons)
-    ? row.lessons
-    : [];
+  const lessons =
+    Array.isArray(row.lessons)
+      ? row.lessons
+      : [];
 
-  const missions = Array.isArray(row.missions)
-    ? row.missions
-    : [];
+  const missions =
+    Array.isArray(row.missions)
+      ? row.missions
+      : [];
 
-  const streak = Math.max(
-    0,
-    Math.floor(Number(row.streak) || 0),
-  );
+  const streak =
+    Math.max(
+      0,
+      Math.floor(
+        Number(row.streak) || 0,
+      ),
+    );
 
   return {
     lessons,
     missions,
+
     streak,
+
     lastActivityDate:
-      typeof row.last_activity_date === 'string'
+      typeof row.last_activity_date ===
+      'string'
         ? row.last_activity_date
         : null,
+
     impactScore:
-      Number(row.impact_score) || 0,
+      Number(
+        row.impact_score,
+      ) || 0,
   };
 }
 
@@ -872,7 +1478,10 @@ function normalizeProgress(
 app.get(
   '/api/progress',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
     const [
       {
         data: progress,
@@ -888,7 +1497,10 @@ app.get(
         .select(
           'lessons, missions, lessons_completed, missions_completed, learning_progress, streak, last_activity_date',
         )
-        .eq('firebase_uid', req.user!.uid)
+        .eq(
+          'firebase_uid',
+          req.user!.uid,
+        )
         .maybeSingle(),
 
       supabaseAdmin
@@ -896,11 +1508,17 @@ app.get(
         .select(
           'xp, eco_coins, impact_score',
         )
-        .eq('firebase_uid', req.user!.uid)
+        .eq(
+          'firebase_uid',
+          req.user!.uid,
+        )
         .maybeSingle(),
     ]);
 
-    if (progressError || profileError) {
+    if (
+      progressError ||
+      profileError
+    ) {
       console.error(
         'Progress fetch failed:',
         progressError?.message ||
@@ -909,21 +1527,31 @@ app.get(
 
       return res.status(500).json({
         success: false,
-        error: 'Unable to fetch progress.',
+        error:
+          'Unable to fetch progress.',
       });
     }
 
     return res.json({
       success: true,
-      progress: normalizeProgress(
-        {
-          ...(progress ?? {}),
-          impact_score:
-            profile?.impact_score,
-        },
-        Number(profile?.xp) || 0,
-        Number(profile?.eco_coins) || 0,
-      ),
+
+      progress:
+        normalizeProgress(
+          {
+            ...(progress ?? {}),
+
+            impact_score:
+              profile?.impact_score,
+          },
+
+          Number(
+            profile?.xp,
+          ) || 0,
+
+          Number(
+            profile?.eco_coins,
+          ) || 0,
+        ),
     });
   },
 );
@@ -946,19 +1574,28 @@ const leaderboardSortFields: Record<
   xp: 'xp',
   impact: 'impact_score',
   coins: 'eco_coins',
-  lessons: 'lessons_completed',
-  missions: 'missions_completed',
+  lessons:
+    'lessons_completed',
+  missions:
+    'missions_completed',
 };
 
 app.get(
   '/api/leaderboard',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
-    const period = String(
-      req.query.period || 'all-time',
-    );
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
+    const period =
+      String(
+        req.query.period ||
+          'all-time',
+      );
 
-    if (period !== 'all-time') {
+    if (
+      period !== 'all-time'
+    ) {
       return res.status(400).json({
         success: false,
         error:
@@ -966,9 +1603,10 @@ app.get(
       });
     }
 
-    const requestedSort = String(
-      req.query.sort || 'xp',
-    ) as LeaderboardSort;
+    const requestedSort =
+      String(
+        req.query.sort || 'xp',
+      ) as LeaderboardSort;
 
     if (
       !Object.prototype.hasOwnProperty.call(
@@ -984,7 +1622,9 @@ app.get(
     }
 
     const primaryField =
-      leaderboardSortFields[requestedSort];
+      leaderboardSortFields[
+        requestedSort
+      ];
 
     try {
       const {
@@ -995,26 +1635,41 @@ app.get(
         .select(
           'firebase_uid, full_name, xp, eco_coins, impact_score, lessons_completed, missions_completed',
         )
-        .order(primaryField, {
-          ascending: false,
-          nullsFirst: false,
-        })
-        .order('xp', {
-          ascending: false,
-          nullsFirst: false,
-        })
-        .order('impact_score', {
-          ascending: false,
-          nullsFirst: false,
-        })
-        .order('missions_completed', {
-          ascending: false,
-          nullsFirst: false,
-        })
-        .order('full_name', {
-          ascending: true,
-          nullsFirst: false,
-        })
+        .order(
+          primaryField,
+          {
+            ascending: false,
+            nullsFirst: false,
+          },
+        )
+        .order(
+          'xp',
+          {
+            ascending: false,
+            nullsFirst: false,
+          },
+        )
+        .order(
+          'impact_score',
+          {
+            ascending: false,
+            nullsFirst: false,
+          },
+        )
+        .order(
+          'missions_completed',
+          {
+            ascending: false,
+            nullsFirst: false,
+          },
+        )
+        .order(
+          'full_name',
+          {
+            ascending: true,
+            nullsFirst: false,
+          },
+        )
         .limit(50);
 
       if (error) {
@@ -1030,43 +1685,58 @@ app.get(
         });
       }
 
-      const entries = (data ?? []).map(
-        (row, index) => ({
-          uid: row.firebase_uid,
+      const entries =
+        (data ?? []).map(
+          (row, index) => ({
+            uid:
+              row.firebase_uid,
 
-          name:
-            typeof row.full_name === 'string' &&
-            row.full_name.trim()
-              ? row.full_name.trim()
-              : 'Eco learner',
+            name:
+              typeof row.full_name ===
+                'string' &&
+              row.full_name.trim()
+                ? row.full_name.trim()
+                : 'Eco learner',
 
-          avatarUrl: null,
+            avatarUrl:
+              null,
 
-          xp: Number(row.xp) || 0,
+            xp:
+              Number(row.xp) || 0,
 
-          impactScore:
-            Number(row.impact_score) || 0,
+            impactScore:
+              Number(
+                row.impact_score,
+              ) || 0,
 
-          ecoCoins:
-            Number(row.eco_coins) || 0,
+            ecoCoins:
+              Number(
+                row.eco_coins,
+              ) || 0,
 
-          lessonsCompleted:
-            Number(row.lessons_completed) || 0,
+            lessonsCompleted:
+              Number(
+                row.lessons_completed,
+              ) || 0,
 
-          missionsCompleted:
-            Number(row.missions_completed) || 0,
+            missionsCompleted:
+              Number(
+                row.missions_completed,
+              ) || 0,
 
-          rank: index + 1,
+            rank:
+              index + 1,
 
-          isCurrentUser:
-            row.firebase_uid ===
-            req.user!.uid,
-        }),
-      );
+            isCurrentUser:
+              row.firebase_uid ===
+              req.user!.uid,
+          }),
+        );
 
       return res.json({
         success: true,
-        sort: requestedSort,
+        sort:
+          requestedSort,
         period,
         entries,
       });
@@ -1094,31 +1764,42 @@ app.get(
 app.put(
   '/api/progress',
   requireAuth,
-  async (req: AuthenticatedRequest, res) => {
-    const body = req.body as {
-      lessons?: unknown;
-      missions?: unknown;
-    };
+  async (
+    req: AuthenticatedRequest,
+    res,
+  ) => {
+    const body =
+      req.body as {
+        lessons?: unknown;
+        missions?: unknown;
+      };
 
     const validItems = (
       items: unknown,
-      type: 'lesson' | 'mission',
+      type:
+        | 'lesson'
+        | 'mission',
     ) =>
       Array.isArray(items) &&
       items.length <= 100 &&
       items.every((item) => {
         if (
           !item ||
-          typeof item !== 'object'
+          typeof item !==
+            'object'
         ) {
           return false;
         }
 
         const value =
-          item as Record<string, unknown>;
+          item as Record<
+            string,
+            unknown
+          >;
 
         if (
-          typeof value.id !== 'string' ||
+          typeof value.id !==
+            'string' ||
           !/^[a-z0-9-]{1,64}$/.test(
             value.id,
           ) ||
@@ -1130,13 +1811,15 @@ app.put(
 
         return (
           type === 'lesson' ||
-          (typeof value.progress ===
-            'number' &&
+          (
+            typeof value.progress ===
+              'number' &&
             isNumberInRange(
               value.progress,
               0,
               100,
-            ))
+            )
+          )
         );
       });
 
@@ -1152,7 +1835,8 @@ app.put(
     ) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid progress payload.',
+        error:
+          'Invalid progress payload.',
       });
     }
 
@@ -1181,9 +1865,10 @@ app.put(
     const learningProgress =
       lessons.length > 0
         ? Math.round(
-            (lessonsCompleted /
-              lessons.length) *
-              100,
+            (
+              lessonsCompleted /
+              lessons.length
+            ) * 100,
           )
         : 0;
 
@@ -1194,20 +1879,30 @@ app.put(
       .from('user_progress')
       .upsert(
         {
-          firebase_uid: req.user!.uid,
-          lessons: body.lessons,
-          missions: body.missions,
+          firebase_uid:
+            req.user!.uid,
+
+          lessons:
+            body.lessons,
+
+          missions:
+            body.missions,
+
           lessons_completed:
             lessonsCompleted,
+
           missions_completed:
             missionsCompleted,
+
           learning_progress:
             learningProgress,
+
           updated_at:
             new Date().toISOString(),
         },
         {
-          onConflict: 'firebase_uid',
+          onConflict:
+            'firebase_uid',
         },
       )
       .select(
@@ -1215,7 +1910,10 @@ app.put(
       )
       .single();
 
-    if (error || !data) {
+    if (
+      error ||
+      !data
+    ) {
       console.error(
         'Progress save failed:',
         error?.message,
@@ -1223,7 +1921,8 @@ app.put(
 
       return res.status(500).json({
         success: false,
-        error: 'Unable to save progress.',
+        error:
+          'Unable to save progress.',
       });
     }
 
@@ -1234,26 +1933,38 @@ app.put(
       .select(
         'xp, eco_coins, impact_score',
       )
-      .eq('firebase_uid', req.user!.uid)
+      .eq(
+        'firebase_uid',
+        req.user!.uid,
+      )
       .maybeSingle();
 
     return res.json({
       success: true,
-      progress: normalizeProgress(
-        {
-          ...data,
-          impact_score:
-            profile?.impact_score,
-        },
-        Number(profile?.xp) || 0,
-        Number(profile?.eco_coins) || 0,
-      ),
+
+      progress:
+        normalizeProgress(
+          {
+            ...data,
+
+            impact_score:
+              profile?.impact_score,
+          },
+
+          Number(
+            profile?.xp,
+          ) || 0,
+
+          Number(
+            profile?.eco_coins,
+          ) || 0,
+        ),
     });
   },
 );
 
 /* -------------------------------------------------------------------------- */
-/* MISSION SUBMISSIONS - GET                                                  */
+/* MISSION SUBMISSIONS - GET                                                 */
 /* -------------------------------------------------------------------------- */
 
 app.get(
@@ -1267,7 +1978,9 @@ app.get(
       data,
       error,
     } = await supabaseAdmin
-      .from('mission_submissions')
+      .from(
+        'mission_submissions',
+      )
       .select(
         'id, mission_id, proof_name, proof_data, note, status, submitted_at, verified_at',
       )
@@ -1275,9 +1988,12 @@ app.get(
         'firebase_uid',
         req.user!.uid,
       )
-      .order('submitted_at', {
-        ascending: false,
-      });
+      .order(
+        'submitted_at',
+        {
+          ascending: false,
+        },
+      );
 
     if (error) {
       console.error(
@@ -1294,32 +2010,42 @@ app.get(
 
     return res.json({
       success: true,
-      submissions: (data ?? []).map(
-        (submission) => ({
-          id: submission.id,
-          missionId:
-            submission.mission_id,
-          proofName:
-            submission.proof_name,
-          proofData:
-            submission.proof_data,
-          note:
-            submission.note ?? '',
-          status:
-            submission.status,
-          submittedAt:
-            submission.submitted_at,
-          verifiedAt:
-            submission.verified_at ??
-            undefined,
-        }),
-      ),
+
+      submissions:
+        (data ?? []).map(
+          (submission) => ({
+            id:
+              submission.id,
+
+            missionId:
+              submission.mission_id,
+
+            proofName:
+              submission.proof_name,
+
+            proofData:
+              submission.proof_data,
+
+            note:
+              submission.note ?? '',
+
+            status:
+              submission.status,
+
+            submittedAt:
+              submission.submitted_at,
+
+            verifiedAt:
+              submission.verified_at ??
+              undefined,
+          }),
+        ),
     });
   },
 );
 
 /* -------------------------------------------------------------------------- */
-/* MISSION SUBMISSIONS - CREATE                                               */
+/* MISSION SUBMISSIONS - CREATE                                              */
 /* -------------------------------------------------------------------------- */
 
 app.post(
@@ -1329,31 +2055,37 @@ app.post(
     req: AuthenticatedRequest,
     res,
   ) => {
-    const body = req.body as {
-      missionId?: unknown;
-      proofName?: unknown;
-      proofData?: unknown;
-      note?: unknown;
-    };
+    const body =
+      req.body as {
+        missionId?: unknown;
+        proofName?: unknown;
+        proofData?: unknown;
+        note?: unknown;
+      };
 
     if (
-      typeof body.missionId !== 'string' ||
+      typeof body.missionId !==
+        'string' ||
       !/^[a-z0-9-]{1,64}$/.test(
         body.missionId,
       ) ||
-      typeof body.proofName !== 'string' ||
+      typeof body.proofName !==
+        'string' ||
       body.proofName.length < 1 ||
       body.proofName.length > 160 ||
-      typeof body.proofData !== 'string' ||
+      typeof body.proofData !==
+        'string' ||
       !body.proofData.startsWith(
         'data:image/',
       ) ||
       body.proofData.length >
         MAX_PROOF_LENGTH ||
       (
-        body.note !== undefined &&
+        body.note !==
+          undefined &&
         (
-          typeof body.note !== 'string' ||
+          typeof body.note !==
+            'string' ||
           body.note.length > 500
         )
       )
@@ -1369,21 +2101,37 @@ app.post(
       data,
       error,
     } = await supabaseAdmin
-      .from('mission_submissions')
+      .from(
+        'mission_submissions',
+      )
       .insert({
-        firebase_uid: req.user!.uid,
-        mission_id: body.missionId,
-        proof_name: body.proofName,
-        proof_data: body.proofData,
-        note: body.note ?? '',
-        status: 'pending',
+        firebase_uid:
+          req.user!.uid,
+
+        mission_id:
+          body.missionId,
+
+        proof_name:
+          body.proofName,
+
+        proof_data:
+          body.proofData,
+
+        note:
+          body.note ?? '',
+
+        status:
+          'pending',
       })
       .select(
         'id, mission_id, proof_name, proof_data, note, status, submitted_at, verified_at',
       )
       .single();
 
-    if (error || !data) {
+    if (
+      error ||
+      !data
+    ) {
       console.error(
         'Mission submission failed:',
         error?.message,
@@ -1398,20 +2146,29 @@ app.post(
 
     return res.status(201).json({
       success: true,
+
       submission: {
-        id: data.id,
+        id:
+          data.id,
+
         missionId:
           data.mission_id,
+
         proofName:
           data.proof_name,
+
         proofData:
           data.proof_data,
+
         note:
           data.note ?? '',
+
         status:
           data.status,
+
         submittedAt:
           data.submitted_at,
+
         verifiedAt:
           data.verified_at ??
           undefined,
@@ -1444,8 +2201,13 @@ app.post(
 
     if (
       !reviewer ||
-      !['teacher', 'admin'].includes(
-        String(reviewer.role),
+      ![
+        'teacher',
+        'admin',
+      ].includes(
+        String(
+          reviewer.role,
+        ),
       )
     ) {
       return res.status(403).json({
@@ -1457,13 +2219,19 @@ app.post(
 
     const {
       data: submission,
-      error: submissionError,
+      error:
+        submissionError,
     } = await supabaseAdmin
-      .from('mission_submissions')
+      .from(
+        'mission_submissions',
+      )
       .select(
         'id, firebase_uid, mission_id, status, rewarded_at',
       )
-      .eq('id', req.params.id)
+      .eq(
+        'id',
+        req.params.id,
+      )
       .maybeSingle();
 
     if (
@@ -1477,27 +2245,42 @@ app.post(
       });
     }
 
-    if (submission.rewarded_at) {
+    if (
+      submission.rewarded_at
+    ) {
       return res.status(200).json({
         success: true,
-        alreadyRewarded: true,
+        alreadyRewarded:
+          true,
       });
     }
 
     const {
       data: verified,
-      error: verifyError,
+      error:
+        verifyError,
     } = await supabaseAdmin
-      .from('mission_submissions')
+      .from(
+        'mission_submissions',
+      )
       .update({
-        status: 'verified',
+        status:
+          'verified',
+
         verified_at:
           new Date().toISOString(),
+
         rewarded_at:
           new Date().toISOString(),
       })
-      .eq('id', submission.id)
-      .is('rewarded_at', null)
+      .eq(
+        'id',
+        submission.id,
+      )
+      .is(
+        'rewarded_at',
+        null,
+      )
       .select('id')
       .maybeSingle();
 
@@ -1514,7 +2297,8 @@ app.post(
 
     const {
       data: student,
-      error: studentError,
+      error:
+        studentError,
     } = await supabaseAdmin
       .from('profiles')
       .select(
@@ -1550,26 +2334,31 @@ app.post(
         coins: 15,
         impact: 20,
       },
+
       m2: {
         xp: 25,
         coins: 10,
         impact: 20,
       },
+
       m3: {
         xp: 20,
         coins: 10,
         impact: 20,
       },
+
       m4: {
         xp: 50,
         coins: 25,
         impact: 20,
       },
+
       m5: {
         xp: 40,
         coins: 20,
         impact: 20,
       },
+
       m6: {
         xp: 35,
         coins: 15,
@@ -1593,23 +2382,35 @@ app.post(
       .from('profiles')
       .update({
         xp:
-          (Number(student.xp) || 0) +
+          (
+            Number(
+              student.xp,
+            ) || 0
+          ) +
           reward.xp,
 
         eco_coins:
-          (Number(student.eco_coins) || 0) +
+          (
+            Number(
+              student.eco_coins,
+            ) || 0
+          ) +
           reward.coins,
 
         impact_score:
-          (Number(
-            student.impact_score,
-          ) || 0) +
+          (
+            Number(
+              student.impact_score,
+            ) || 0
+          ) +
           reward.impact,
 
         missions_completed:
-          (Number(
-            student.missions_completed,
-          ) || 0) + 1,
+          (
+            Number(
+              student.missions_completed,
+            ) || 0
+          ) + 1,
 
         updated_at:
           new Date().toISOString(),
@@ -1634,7 +2435,8 @@ app.post(
 
     return res.json({
       success: true,
-      profile: updatedProfile,
+      profile:
+        updatedProfile,
     });
   },
 );
@@ -1649,7 +2451,9 @@ app.post(
   aiRateLimit,
   async (req, res) => {
     const input =
-      validateChatInput(req.body);
+      validateChatInput(
+        req.body,
+      );
 
     if (!input) {
       return res.status(400).json({
@@ -1700,4 +2504,3 @@ app.listen(
     );
   },
 );
-  

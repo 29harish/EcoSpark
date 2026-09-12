@@ -45,6 +45,15 @@ export interface LeaderboardEntry {
   isCurrentUser: boolean;
 }
 
+export interface RewardRedemption {
+  id: string;
+  rewardId: string;
+  rewardTitle: string;
+  coinsSpent: number;
+  status: 'completed' | 'cancelled';
+  redeemedAt: string;
+}
+
 export async function loadLeaderboard(
   sort: LeaderboardSort = 'xp',
 ): Promise<LeaderboardEntry[]> {
@@ -157,6 +166,32 @@ export async function saveReward(
   );
 
   return response.profile;
+}
+
+export async function loadRewardRedemptions(): Promise<
+  RewardRedemption[]
+> {
+  const response = await apiRequest(
+    '/api/rewards/redemptions',
+  );
+
+  return (response.redemptions ?? []) as RewardRedemption[];
+}
+
+export async function redeemReward(
+  rewardId: string,
+) {
+  const response = await apiRequest(
+    '/api/rewards/redeem',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        rewardId,
+      }),
+    },
+  );
+
+  return response;
 }
 
 export async function loadMissionSubmissions(): Promise<
