@@ -247,31 +247,24 @@ export function Rewards() {
         }
 
         /*
-         * The backend has already recorded
+         * Reload the authoritative redemption history instead of
+         * creating a fake local redemption record.
+         *
+         * The backend has already deducted the coins and inserted
          * the redemption in Supabase.
          */
-        setRedemptions(
-          (current) => [
-            ...current,
-            {
-              id: `local-${reward.id}-${Date.now()}`,
-              rewardId:
-                reward.id,
-              rewardTitle:
-                reward.title,
-              coinsSpent:
-                reward.cost,
-              status:
-                'completed',
-              redeemedAt:
-                new Date().toISOString(),
-            },
-          ],
-        );
+        try {
+          const latestRedemptions =
+            await loadRewardRedemptions();
+          setRedemptions(latestRedemptions);
+        } catch (historyError) {
+          console.warn(
+            'Redemption succeeded but history refresh failed:',
+            historyError,
+          );
+        }
 
-        setSelectedReward(
-          null,
-        );
+        setSelectedReward(null);
 
         showToast(
           `🎉 ${reward.title} redeemed successfully!`,

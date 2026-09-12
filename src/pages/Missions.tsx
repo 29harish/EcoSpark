@@ -10,7 +10,7 @@ import { useFeedback } from '@/components/ui/FeedbackToast';
 import { loadMissionSubmissions, submitMissionProof, type MissionSubmission } from '@/lib/profileStore';
 
 export function Missions() {
-  const { missions, completedMissions, user, xp, coins, impactScore } = useApp();
+  const { missions, completedMissions, user, impactScore } = useApp();
   const { showInfo } = useFeedback();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<MissionSubmission[]>([]);
@@ -19,27 +19,46 @@ export function Missions() {
 
   useEffect(() => {
     let active = true;
+
     const load = async () => {
-      if (!user) return;
+      if (!user) {
+        if (active) setLoading(false);
+        return;
+      }
+
       try {
         const remote = await loadMissionSubmissions();
-        if (active) setSubmissions(remote);
+        if (active) {
+          setSubmissions(remote);
+          setError(null);
+        }
       } catch (loadError) {
         if (active) {
-          setError(loadError instanceof Error ? loadError.message : 'Mission submissions are unavailable right now.');
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : 'Mission submissions are unavailable right now.',
+          );
         }
       } finally {
         if (active) setLoading(false);
       }
     };
+
     void load();
-    return () => { active = false; };
+    const intervalId = window.setInterval(() => {
+      void load();
+    }, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
   }, [user]);
 
   const pendingIds = useMemo(() => new Set(submissions.filter((item) => item.status === 'pending').map((item) => item.missionId)), [submissions]);
   const verifiedIds = useMemo(() => new Set(submissions.filter((item) => item.status === 'verified').map((item) => item.missionId)), [submissions]);
   const selectedMission = missions.find((mission) => mission.id === selectedId) ?? null;
-  const totalXp = missions.filter((mission) => mission.completed).reduce((sum, mission) => sum + mission.xpReward, 0);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -51,7 +70,7 @@ export function Missions() {
         <Stat value={impactScore} label="Impact" />
 
       </div>
-      {error && <Card className="p-4 mb-6 border-coral-200 bg-coral-50"><p className="text-sm text-coral-700">Live verification is unavailable. Your submission is saved on this device and will retry when the service is available.</p></Card>}
+      {error && <Card className="p-4 mb-6 border-coral-200 bg-coral-50"><p className="text-sm text-coral-700">We could not refresh mission verification right now. Please try again shortly.</p></Card>}
       <div className="flex items-center justify-between mb-4"><h2 className="text-2xl font-extrabold text-leaf-800">Choose an action</h2><span className="text-sm text-leaf-600/60">{missions.length} missions</span></div>
       {loading ? <Card className="p-8 text-center text-leaf-600">Loading missions...</Card> : <div className="grid md:grid-cols-2 gap-5">{missions.map((mission) => {
         const submission = submissions.find((item) => item.missionId === mission.id && item.status !== 'rejected');
@@ -80,7 +99,7 @@ function ProofDialog({ mission, onClose, onSubmitted, showInfo }: { mission: Ret
   const [saving, setSaving] = useState(false);
   const chooseFile = (next: File | undefined) => {
     if (!next) return;
-    if (!next.type.startsWith('image/') || next.size > 20 * 1024) { showInfo('Please choose an image proof smaller than 20 KB.'); return; }
+    if (!next.type.startsWith('image/') || next.size > 200 * 1024) { showInfo('Please choose an image proof smaller than 200 KB.'); return; }
     setFile(next);
     const reader = new FileReader();
     reader.onload = () => setProofData(String(reader.result));

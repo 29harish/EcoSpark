@@ -23,7 +23,7 @@ const PORT = Number(process.env.PORT) || 5000;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY_ITEMS = 20;
 const MAX_ARRAY_ITEMS = 20;
-const MAX_PROOF_LENGTH = 28_000;
+const MAX_PROOF_LENGTH = 200_000;
 
 const REWARD_AMOUNTS = {
   lesson: { maxXp: 100, maxCoins: 20 },
@@ -187,7 +187,7 @@ app.use(
 
 app.use(
   express.json({
-    limit: '32kb',
+    limit: '256kb',
   }),
 );
 
@@ -2098,6 +2098,39 @@ app.post(
     }
 
     const {
+      data: existingSubmission,
+      error: existingSubmissionError,
+    } = await supabaseAdmin
+      .from('mission_submissions')
+      .select('id, status')
+      .eq('firebase_uid', req.user!.uid)
+      .eq('mission_id', body.missionId)
+      .in('status', ['pending', 'verified'])
+      .limit(1)
+      .maybeSingle();
+
+    if (existingSubmissionError) {
+      console.error(
+        'Mission submission lookup failed:',
+        existingSubmissionError.message,
+      );
+      return res.status(500).json({
+        success: false,
+        error: 'Unable to check existing mission submissions.',
+      });
+    }
+
+    if (existingSubmission) {
+      return res.status(409).json({
+        success: false,
+        error:
+          existingSubmission.status === 'verified'
+            ? 'This mission has already been verified.'
+            : 'This mission is already awaiting verification.',
+      });
+    }
+
+    const {
       data,
       error,
     } = await supabaseAdmin
@@ -2245,53 +2278,17 @@ app.post(
       });
     }
 
-    if (
-      submission.rewarded_at
-    ) {
+    if (submission.rewarded_at) {
       return res.status(200).json({
         success: true,
-        alreadyRewarded:
-          true,
+        alreadyRewarded: true,
       });
     }
 
-    const {
-      data: verified,
-      error:
-        verifyError,
-    } = await supabaseAdmin
-      .from(
-        'mission_submissions',
-      )
-      .update({
-        status:
-          'verified',
-
-        verified_at:
-          new Date().toISOString(),
-
-        rewarded_at:
-          new Date().toISOString(),
-      })
-      .eq(
-        'id',
-        submission.id,
-      )
-      .is(
-        'rewarded_at',
-        null,
-      )
-      .select('id')
-      .maybeSingle();
-
-    if (
-      verifyError ||
-      !verified
-    ) {
+    if (submission.status !== 'pending') {
       return res.status(409).json({
         success: false,
-        error:
-          'Mission was already processed.',
+        error: 'Only pending missions can be verified.',
       });
     }
 
@@ -2430,6 +2427,34 @@ app.post(
         success: false,
         error:
           'Unable to apply mission reward.',
+      });
+    }
+
+    const {
+      data: verified,
+      error: verifyError,
+    } = await supabaseAdmin
+      .from('mission_submissions')
+      .update({
+        status: 'verified',
+        verified_at: new Date().toISOString(),
+        rewarded_at: new Date().toISOString(),
+      })
+      .eq('id', submission.id)
+      .eq('status', 'pending')
+      .is('rewarded_at', null)
+      .select('id')
+      .maybeSingle();
+
+    if (verifyError || !verified) {
+      console.error(
+        'Mission verification finalization failed:',
+        verifyError?.message,
+      );
+      return res.status(500).json({
+        success: false,
+        error:
+          'Mission reward was applied, but verification status could not be finalized.',
       });
     }
 
