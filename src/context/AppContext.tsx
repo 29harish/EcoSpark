@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useContext,
@@ -54,19 +55,16 @@ export type PageId =
   | 'assessment';
 
 interface AppState {
-  // Authentication
   user: User | null;
   authLoading: boolean;
   logout: () => Promise<void>;
 
-  // Navigation
   currentPage: PageId;
   activeLessonId: string | null;
   navigate: (page: PageId) => void;
   openLesson: (lessonId: string) => void;
   closeLesson: () => void;
 
-  // User stats
   level: number;
   xp: number;
   xpForNextLevel: number;
@@ -77,13 +75,11 @@ interface AppState {
   gardenLevel: number;
   gardenRank: string;
 
-  // Data
   lessons: Lesson[];
   missions: Mission[];
   completedLessons: number;
   completedMissions: number;
 
-  // Actions
   completeLesson: (lessonId: string) => Promise<void>;
   completeMission: (missionId: string) => Promise<void>;
   updateMissionProgress: (
@@ -128,11 +124,16 @@ function calculateLevel(xp: number): {
   xpInCurrentLevel: number;
   xpForNextLevel: number;
 } {
+  const safeXp = Math.max(
+    0,
+    Math.floor(Number(xp) || 0),
+  );
+
   const level =
-    Math.floor(xp / XP_PER_LEVEL) + 1;
+    Math.floor(safeXp / XP_PER_LEVEL) + 1;
 
   const xpInCurrentLevel =
-    xp % XP_PER_LEVEL;
+    safeXp % XP_PER_LEVEL;
 
   return {
     level,
@@ -156,6 +157,7 @@ export interface UserProfile {
   recommendedTopics: AssessmentResult['recommendedTopics'];
   assessmentCompleted: boolean;
   assessmentCompletedAt: string;
+
   xp?: number;
   ecoCoins?: number;
   impactScore?: number;
@@ -183,9 +185,13 @@ export function AppProvider({
 
   const [xp, setXp] = useState(0);
   const [coins, setCoins] = useState(0);
+
   const [streak, setStreak] = useState(0);
-  const [lastActivityDate, setLastActivityDate] =
-    useState<string | null>(null);
+
+  const [
+    lastActivityDate,
+    setLastActivityDate,
+  ] = useState<string | null>(null);
 
   const [impactScore, setImpactScore] =
     useState(0);
@@ -216,7 +222,23 @@ export function AppProvider({
   const [profile, setProfile] =
     useState<UserProfile | null>(null);
 
-  const coinsRef = useRef(coins);
+  /*
+   * Keep the latest coin balance available
+   * synchronously for async operations.
+   */
+  const coinsRef = useRef(0);
+
+  /*
+   * Keep the latest profile reference as well.
+   * This prevents stale async operations from
+   * accidentally restoring an older balance.
+   */
+  const profileRef =
+    useRef<UserProfile | null>(null);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   const assessmentCompleted = Boolean(
     profile?.assessmentCompleted &&
@@ -235,6 +257,57 @@ export function AppProvider({
       : level >= 5
         ? 'Forest Explorer'
         : 'Seedling';
+
+  /*
+   * Central function for applying an authoritative
+   * profile received from the backend.
+   *
+   * Whenever Supabase gives us a profile, ALL
+   * relevant local state is synchronized from it.
+   */
+  const applyRemoteProfile =
+    useCallback(
+      (remoteProfile: UserProfile | null) => {
+        if (!remoteProfile) {
+          return;
+        }
+
+        const nextXp =
+          Math.max(
+            0,
+            Math.floor(
+              Number(remoteProfile.xp) || 0,
+            ),
+          );
+
+        const nextCoins =
+          Math.max(
+            0,
+            Math.floor(
+              Number(
+                remoteProfile.ecoCoins,
+              ) || 0,
+            ),
+          );
+
+        const nextImpact =
+          Math.max(
+            0,
+            Number(
+              remoteProfile.impactScore,
+            ) || 0,
+          );
+
+        setProfile(remoteProfile);
+
+        setXp(nextXp);
+        setCoins(nextCoins);
+        coinsRef.current = nextCoins;
+
+        setImpactScore(nextImpact);
+      },
+      [],
+    );
 
   const navigate = useCallback(
     (page: PageId) => {
@@ -282,9 +355,8 @@ export function AppProvider({
         return;
       }
 
-      setXp(
-        (prev) =>
-          prev + Math.floor(amount),
+      setXp((prev) =>
+        prev + Math.floor(amount),
       );
     },
     [],
@@ -315,10 +387,8 @@ export function AppProvider({
   /*
    * Legacy generic coin spending.
    *
-   * Rewards.tsx should NOT use this.
-   * Reward purchases must use redeemReward()
-   * so the backend validates the reward and
-   * performs the transactional deduction.
+   * Rewards.tsx should use redeemReward()
+   * instead of this function.
    */
   const spendCoins = useCallback(
     async (amount: number) => {
@@ -335,35 +405,72 @@ export function AppProvider({
             Math.floor(amount),
           );
 
+        if (!savedProfile) {
+          return false;
+        }
+
+        const currentProfile =
+          profileRef.current;
+
         const nextXp =
           Number(savedProfile.xp) || 0;
 
         const nextCoins =
-          Number(savedProfile.eco_coins) || 0;
+          Math.max(
+            0,
+            Number(
+              savedProfile.eco_coins,
+            ) || 0,
+          );
+
+        const nextImpact =
+          Number(
+            savedProfile.impact_score,
+          ) || 0;
 
         setXp(nextXp);
         setCoins(nextCoins);
-
         coinsRef.current = nextCoins;
+        setImpactScore(nextImpact);
 
-        setProfile((current) =>
-          current
-            ? {
-                ...current,
-                xp: nextXp,
-                ecoCoins: nextCoins,
-                impactScore:
-                  Number(
-                    savedProfile.impact_score,
-                  ) ||
-                  current.impactScore ||
-                  0,
-              }
-            : current,
-        );
+        if (currentProfile) {
+          const updatedProfile: UserProfile = {
+            ...currentProfile,
+            xp: nextXp,
+            ecoCoins: nextCoins,
+            impactScore: nextImpact,
+            lessonsCompleted:
+              Number(
+                savedProfile.lessons_completed,
+              ) ||
+              currentProfile.lessonsCompleted ||
+              0,
+            missionsCompleted:
+              Number(
+                savedProfile.missions_completed,
+              ) ||
+              currentProfile.missionsCompleted ||
+              0,
+            learningProgress:
+              Number(
+                savedProfile.learning_progress,
+              ) ||
+              currentProfile.learningProgress ||
+              0,
+          };
+
+          setProfile(updatedProfile);
+          profileRef.current =
+            updatedProfile;
+        }
 
         return true;
-      } catch {
+      } catch (error) {
+        console.error(
+          'Coin spending failed:',
+          error,
+        );
+
         return false;
       }
     },
@@ -373,77 +480,145 @@ export function AppProvider({
   /*
    * Secure reward redemption.
    *
-   * The frontend sends ONLY the reward ID.
-   * The backend decides the actual price/title
-   * and performs the Supabase transaction.
+   * Only rewardId is sent to the backend.
+   * Supabase is the authoritative source.
    */
   const redeemReward = useCallback(
     async (rewardId: string) => {
-      if (!rewardId.trim()) {
+      if (
+        !rewardId ||
+        !rewardId.trim()
+      ) {
         return false;
       }
 
       try {
         const response =
           await redeemRewardApi(
-            rewardId,
+            rewardId.trim(),
           );
 
         const savedProfile =
-          response.profile;
+          response?.profile;
 
         if (!savedProfile) {
+          console.error(
+            'Reward redemption returned no profile.',
+          );
+
           return false;
         }
 
+        /*
+         * IMPORTANT:
+         *
+         * Never calculate the new balance
+         * locally here.
+         *
+         * The backend has already deducted the
+         * correct amount in Supabase.
+         */
+        const currentProfile =
+          profileRef.current;
+
         const nextXp =
-          Number(savedProfile.xp) || 0;
+          Math.max(
+            0,
+            Math.floor(
+              Number(savedProfile.xp) || 0,
+            ),
+          );
 
         const nextCoins =
-          Number(savedProfile.eco_coins) || 0;
+          Math.max(
+            0,
+            Math.floor(
+              Number(
+                savedProfile.eco_coins,
+              ) || 0,
+            ),
+          );
 
         const nextImpact =
-          Number(
-            savedProfile.impact_score,
-          ) || 0;
+          Math.max(
+            0,
+            Number(
+              savedProfile.impact_score,
+            ) || 0,
+          );
 
         setXp(nextXp);
         setCoins(nextCoins);
-
         coinsRef.current = nextCoins;
-
         setImpactScore(nextImpact);
 
-        setProfile((current) => {
-          if (!current) {
-            return current;
-          }
+        if (currentProfile) {
+          const updatedProfile: UserProfile = {
+            ...currentProfile,
 
-          return {
-            ...current,
             xp: nextXp,
             ecoCoins: nextCoins,
             impactScore: nextImpact,
+
             lessonsCompleted:
               Number(
                 savedProfile.lessons_completed,
               ) ||
-              current.lessonsCompleted ||
+              currentProfile.lessonsCompleted ||
               0,
+
             missionsCompleted:
               Number(
                 savedProfile.missions_completed,
               ) ||
-              current.missionsCompleted ||
+              currentProfile.missionsCompleted ||
               0,
+
             learningProgress:
               Number(
                 savedProfile.learning_progress,
               ) ||
-              current.learningProgress ||
+              currentProfile.learningProgress ||
               0,
           };
-        });
+
+          setProfile(updatedProfile);
+          profileRef.current =
+            updatedProfile;
+        }
+
+        /*
+         * Do one authoritative profile reload
+         * after redemption.
+         *
+         * This confirms that the value currently
+         * displayed by the UI also exists in the
+         * database.
+         */
+        try {
+          const verifiedProfile =
+            await loadProfile(
+              savedProfile.firebase_uid ??
+                user?.uid ??
+                '',
+            );
+
+          if (verifiedProfile) {
+            applyRemoteProfile(
+              verifiedProfile,
+            );
+          }
+        } catch (verificationError) {
+          /*
+           * Do not fail an already successful
+           * redemption because the verification
+           * request failed.
+           */
+          console.warn(
+            'Post-redemption profile verification failed:',
+            verificationError,
+          );
+        }
 
         return true;
       } catch (error) {
@@ -457,7 +632,10 @@ export function AppProvider({
         return false;
       }
     },
-    [],
+    [
+      applyRemoteProfile,
+      user,
+    ],
   );
 
   const applyProgressSnapshot =
@@ -510,6 +688,12 @@ export function AppProvider({
       [],
     );
 
+  /*
+   * Earn XP / Eco Coins.
+   *
+   * The backend calculates the new balance
+   * from the existing database balance.
+   */
   const grantReward = useCallback(
     async (
       activity:
@@ -526,38 +710,82 @@ export function AppProvider({
           rewardCoins,
         );
 
+      if (!savedProfile) {
+        throw new Error(
+          'Reward was not saved.',
+        );
+      }
+
+      const currentProfile =
+        profileRef.current;
+
       const nextXp =
-        Number(savedProfile.xp) || 0;
+        Math.max(
+          0,
+          Math.floor(
+            Number(savedProfile.xp) || 0,
+          ),
+        );
 
       const nextCoins =
-        Number(
-          savedProfile.eco_coins,
-        ) || 0;
+        Math.max(
+          0,
+          Math.floor(
+            Number(
+              savedProfile.eco_coins,
+            ) || 0,
+          ),
+        );
+
+      const nextImpact =
+        Math.max(
+          0,
+          Number(
+            savedProfile.impact_score,
+          ) || 0,
+        );
 
       setXp(nextXp);
       setCoins(nextCoins);
+      coinsRef.current = nextCoins;
+      setImpactScore(nextImpact);
 
-      coinsRef.current =
-        nextCoins;
+      if (currentProfile) {
+        const updatedProfile: UserProfile = {
+          ...currentProfile,
+          xp: nextXp,
+          ecoCoins: nextCoins,
+          impactScore: nextImpact,
+          lessonsCompleted:
+            Number(
+              savedProfile.lessons_completed,
+            ) ||
+            currentProfile.lessonsCompleted ||
+            0,
+          missionsCompleted:
+            Number(
+              savedProfile.missions_completed,
+            ) ||
+            currentProfile.missionsCompleted ||
+            0,
+          learningProgress:
+            Number(
+              savedProfile.learning_progress,
+            ) ||
+            currentProfile.learningProgress ||
+            0,
+        };
 
-      setProfile((current) =>
-        current
-          ? {
-              ...current,
-              xp: nextXp,
-              ecoCoins: nextCoins,
-              impactScore:
-                Number(
-                  savedProfile.impact_score,
-                ) ||
-                current.impactScore ||
-                0,
-            }
-          : current,
-      );
+        setProfile(updatedProfile);
+        profileRef.current =
+          updatedProfile;
+      }
+
+      const remoteProgress =
+        await loadProgress();
 
       applyProgressSnapshot(
-        await loadProgress(),
+        remoteProgress,
       );
     },
     [applyProgressSnapshot],
@@ -569,7 +797,7 @@ export function AppProvider({
         nextLessons: Lesson[],
         nextMissions: Mission[],
       ) => {
-        applyProgressSnapshot(
+        const savedProgress =
           await saveProgress({
             lessons:
               nextLessons.map(
@@ -594,7 +822,10 @@ export function AppProvider({
                   completed,
                 }),
               ),
-          }),
+          });
+
+        applyProgressSnapshot(
+          savedProgress,
         );
       },
       [applyProgressSnapshot],
@@ -661,17 +892,24 @@ export function AppProvider({
         missionId: string,
         progress: number,
       ) => {
+        const safeProgress =
+          Math.max(
+            0,
+            Math.min(
+              100,
+              Number(progress) || 0,
+            ),
+          );
+
         const nextMissions =
           missions.map((mission) =>
             mission.id === missionId
               ? {
                   ...mission,
-                  progress: Math.min(
-                    100,
-                    progress,
-                  ),
+                  progress:
+                    safeProgress,
                   completed:
-                    progress >= 100,
+                    safeProgress >= 100,
                 }
               : mission,
           );
@@ -700,6 +938,14 @@ export function AppProvider({
       (mission) => mission.completed,
     ).length;
 
+  /*
+   * Authentication / profile restoration.
+   *
+   * IMPORTANT:
+   * We reset temporary UI state first, then
+   * immediately replace it with the authoritative
+   * Supabase profile.
+   */
   useEffect(() => {
     const unsubscribe =
       onAuthStateChanged(
@@ -709,11 +955,10 @@ export function AppProvider({
 
           if (!firebaseUser) {
             setProfile(null);
-            setAssessmentResult(null);
-            setAuthLoading(false);
-          }
+            profileRef.current = null;
 
-          if (firebaseUser) {
+            setAssessmentResult(null);
+
             setXp(0);
             setCoins(0);
             coinsRef.current = 0;
@@ -721,144 +966,9 @@ export function AppProvider({
             setStreak(0);
             setLastActivityDate(null);
             setImpactScore(0);
-            setGardenLevel(3);
-
-            setLessons(
-              initialLessons.map(
-                (lesson) => ({
-                  ...lesson,
-                  completed: false,
-                }),
-              ),
-            );
-
-            setMissions(
-              initialMissions.map(
-                (mission) => ({
-                  ...mission,
-                  completed: false,
-                  progress: 0,
-                }),
-              ),
-            );
-
-            setAssessmentResult(null);
-            setProfile(null);
-
-            let remoteProfile:
-              | UserProfile
-              | null = null;
-
-            let profileLoadSucceeded =
-              false;
-
-            try {
-              remoteProfile =
-                await loadProfile(
-                  firebaseUser.uid,
-                );
-
-              const remoteProgress =
-                await loadProgress();
-
-              applyProgressSnapshot(
-                remoteProgress,
-              );
-
-              profileLoadSucceeded = true;
-
-              if (remoteProfile) {
-                const loadedProfile =
-                  remoteProfile;
-
-                setProfile(
-                  loadedProfile,
-                );
-
-                const loadedXp =
-                  Number(
-                    loadedProfile.xp,
-                  ) || 0;
-
-                const loadedCoins =
-                  Number(
-                    loadedProfile.ecoCoins,
-                  ) || 0;
-
-                setXp(loadedXp);
-                setCoins(
-                  loadedCoins,
-                );
-
-                coinsRef.current =
-                  loadedCoins;
-
-                setAssessmentResult(
-                  (current) =>
-                    current ?? {
-                      overallScore:
-                        loadedProfile.ecoScore,
-
-                      topicScores:
-                        loadedProfile.topicScores,
-
-                      strengths:
-                        loadedProfile.strengths,
-
-                      weakTopics:
-                        loadedProfile.knowledgeGaps,
-
-                      knowledgeLevel:
-                        loadedProfile.ecoLevel,
-
-                      recommendedTopics:
-                        loadedProfile.recommendedTopics,
-
-                      answers: {},
-
-                      completedAt:
-                        loadedProfile.assessmentCompletedAt,
-                    },
-                );
-              }
-            } catch (error) {
-              console.error(
-                'Unable to load profile:',
-                error instanceof Error
-                  ? error.message
-                  : 'unknown error',
-              );
-            }
 
             setAuthLoading(false);
 
-            setCurrentPage(
-              (currentPage) => {
-                if (
-                  firebaseUser &&
-                  [
-                    'landing',
-                    'login',
-                    'signup',
-                  ].includes(
-                    currentPage,
-                  )
-                ) {
-                  const completedForUser =
-                    remoteProfile?.uid ===
-                      firebaseUser.uid &&
-                    remoteProfile.assessmentCompleted;
-
-                  return completedForUser ||
-                    !profileLoadSucceeded
-                    ? 'dashboard'
-                    : 'assessment';
-                }
-
-                return currentPage;
-              },
-            );
-          } else {
             setCurrentPage(
               (currentPage) =>
                 currentPage !==
@@ -868,12 +978,210 @@ export function AppProvider({
                   ? 'landing'
                   : currentPage,
             );
+
+            return;
           }
+
+          /*
+           * Temporary loading state.
+           * These values MUST be replaced by the
+           * remote profile below.
+           */
+          setXp(0);
+          setCoins(0);
+          coinsRef.current = 0;
+
+          setStreak(0);
+          setLastActivityDate(null);
+          setImpactScore(0);
+          setGardenLevel(3);
+
+          setLessons(
+            initialLessons.map(
+              (lesson) => ({
+                ...lesson,
+                completed: false,
+              }),
+            ),
+          );
+
+          setMissions(
+            initialMissions.map(
+              (mission) => ({
+                ...mission,
+                completed: false,
+                progress: 0,
+              }),
+            ),
+          );
+
+          setAssessmentResult(null);
+
+          setProfile(null);
+          profileRef.current = null;
+
+          let remoteProfile:
+            | UserProfile
+            | null = null;
+
+          let profileLoadSucceeded =
+            false;
+
+          try {
+            /*
+             * First load the profile from Supabase.
+             *
+             * This is the authoritative source for:
+             * XP
+             * Eco Coins
+             * Impact Score
+             * assessment
+             */
+            remoteProfile =
+              await loadProfile(
+                firebaseUser.uid,
+              );
+
+            if (remoteProfile) {
+              applyRemoteProfile(
+                remoteProfile,
+              );
+
+              setAssessmentResult({
+                overallScore:
+                  remoteProfile.ecoScore,
+
+                topicScores:
+                  remoteProfile.topicScores,
+
+                strengths:
+                  remoteProfile.strengths,
+
+                weakTopics:
+                  remoteProfile.knowledgeGaps,
+
+                knowledgeLevel:
+                  remoteProfile.ecoLevel,
+
+                recommendedTopics:
+                  remoteProfile.recommendedTopics,
+
+                answers: {},
+
+                completedAt:
+                  remoteProfile.assessmentCompletedAt,
+              });
+            }
+
+            /*
+             * Progress is loaded separately.
+             *
+             * It must NOT overwrite coins or XP.
+             */
+            const remoteProgress =
+              await loadProgress();
+
+            applyProgressSnapshot(
+              remoteProgress,
+            );
+
+            /*
+             * Re-load the profile after progress
+             * loading so that the final state is
+             * definitely the latest profile state.
+             */
+            const verifiedProfile =
+              await loadProfile(
+                firebaseUser.uid,
+              );
+
+            if (verifiedProfile) {
+              applyRemoteProfile(
+                verifiedProfile,
+              );
+
+              if (
+                verifiedProfile.assessmentCompleted
+              ) {
+                setAssessmentResult(
+                  (current) =>
+                    current ?? {
+                      overallScore:
+                        verifiedProfile.ecoScore,
+
+                      topicScores:
+                        verifiedProfile.topicScores,
+
+                      strengths:
+                        verifiedProfile.strengths,
+
+                      weakTopics:
+                        verifiedProfile.knowledgeGaps,
+
+                      knowledgeLevel:
+                        verifiedProfile.ecoLevel,
+
+                      recommendedTopics:
+                        verifiedProfile.recommendedTopics,
+
+                      answers: {},
+
+                      completedAt:
+                        verifiedProfile.assessmentCompletedAt,
+                    },
+                );
+              }
+
+              remoteProfile =
+                verifiedProfile;
+            }
+
+            profileLoadSucceeded = true;
+          } catch (error) {
+            console.error(
+              'Unable to load profile:',
+              error instanceof Error
+                ? error.message
+                : 'unknown error',
+            );
+          }
+
+          setAuthLoading(false);
+
+          setCurrentPage(
+            (currentPage) => {
+              if (
+                firebaseUser &&
+                [
+                  'landing',
+                  'login',
+                  'signup',
+                ].includes(
+                  currentPage,
+                )
+              ) {
+                const completedForUser =
+                  remoteProfile?.uid ===
+                    firebaseUser.uid &&
+                  remoteProfile.assessmentCompleted;
+
+                return completedForUser ||
+                  !profileLoadSucceeded
+                  ? 'dashboard'
+                  : 'assessment';
+              }
+
+              return currentPage;
+            },
+          );
         },
       );
 
     return unsubscribe;
-  }, [applyProgressSnapshot]);
+  }, [
+    applyProgressSnapshot,
+    applyRemoteProfile,
+  ]);
 
   useEffect(() => {
     if (level !== gardenLevel) {
@@ -888,49 +1196,64 @@ export function AppProvider({
       ) => {
         setAssessmentResult(result);
 
-        if (user) {
-          const nextProfile: UserProfile =
-            {
-              uid: user.uid,
-              email: user.email,
-              displayName:
-                user.displayName,
-
-              ecoLevel:
-                result.knowledgeLevel,
-
-              ecoScore:
-                result.overallScore,
-
-              topicScores:
-                result.topicScores,
-
-              strengths:
-                result.strengths,
-
-              knowledgeGaps:
-                result.weakTopics,
-
-              recommendedTopics:
-                result.recommendedTopics,
-
-              assessmentCompleted:
-                true,
-
-              assessmentCompletedAt:
-                result.completedAt,
-            };
-
-          const savedProfile =
-            await saveAssessmentProfile(
-              nextProfile,
-              result,
-            );
-
-          setProfile(savedProfile);
+        if (!user) {
+          return;
         }
+
+        const nextProfile: UserProfile = {
+          uid: user.uid,
+          email: user.email,
+          displayName:
+            user.displayName,
+
+          ecoLevel:
+            result.knowledgeLevel,
+
+          ecoScore:
+            result.overallScore,
+
+          topicScores:
+            result.topicScores,
+
+          strengths:
+            result.strengths,
+
+          knowledgeGaps:
+            result.weakTopics,
+
+          recommendedTopics:
+            result.recommendedTopics,
+
+          assessmentCompleted:
+            true,
+
+          assessmentCompletedAt:
+            result.completedAt,
+
+          /*
+           * Do NOT send local XP/coins here.
+           * The backend protects those fields.
+           */
+        };
+
+        const savedProfile =
+          await saveAssessmentProfile(
+            nextProfile,
+            result,
+          );
+
+        /*
+         * Preserve the server-authoritative
+         * progression values returned by Supabase.
+         */
+        applyRemoteProfile(
+          savedProfile,
+        );
       },
-      [user],
+      [
+        user,
+        applyRemoteProfile,
+      ],
     );
 
   const hasCompletedAssessment =
@@ -948,7 +1271,17 @@ export function AppProvider({
 
         setUser(null);
         setProfile(null);
+        profileRef.current = null;
+
         setAssessmentResult(null);
+
+        setXp(0);
+        setCoins(0);
+        coinsRef.current = 0;
+
+        setStreak(0);
+        setLastActivityDate(null);
+        setImpactScore(0);
 
         navigate('landing');
       } catch (error) {
@@ -1029,3 +1362,4 @@ export function useApp() {
 
   return ctx;
 }
+  
