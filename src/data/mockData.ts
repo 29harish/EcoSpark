@@ -1131,8 +1131,8 @@ export const gardenItems: GardenItem[] = [
 ];
 
 export const rewards: Reward[] = [
-  { id: 'r1', title: 'Eco Hero Badge', description: 'A digital badge for your profile', emoji: '🏅', cost: 100, category: 'badge', color: 'from-sun-400 to-coral-400' },
-  { id: 'r2', title: 'Custom Avatar Frame', description: 'Decorate your profile with a nature frame', emoji: '🖼️', cost: 250, category: 'digital', color: 'from-leaf-400 to-lagoon-400' },
+  { id: 'r1', title: 'Eco Hero Badge', description: 'A digital badge for your profile', emoji: '🏅', cost: 10, category: 'badge', color: 'from-sun-400 to-coral-400' },
+  { id: 'r2', title: 'Custom Avatar Frame', description: 'Decorate your profile with a nature frame', emoji: '🖼️', cost: 50, category: 'digital', color: 'from-leaf-400 to-lagoon-400' },
   { id: 'r3', title: 'Garden Theme: Sunset', description: 'A warm sunset theme for your Eco Garden', emoji: '🌅', cost: 300, category: 'digital', color: 'from-coral-400 to-sun-400' },
   { id: 'r4', title: 'Reusable Water Bottle', description: 'A real EcoSpark branded water bottle!', emoji: '🍶', cost: 500, category: 'real', color: 'from-lagoon-400 to-sky2-400' },
   { id: 'r5', title: 'Seed Kit', description: 'A real kit with seeds to plant at home', emoji: '🌻', cost: 750, category: 'real', color: 'from-leaf-500 to-sun-400' },
